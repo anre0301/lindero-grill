@@ -1,0 +1,1231 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lindero Grill • POS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<style>
+  :root{
+    --bg:#0e0f12; --surface:#121318; --soft:#1a1c22; --line:rgba(255,255,255,.08);
+    --text:#ecf0f8; --muted:#a7b0c2;
+    --accent:#ff7a00; --accent2:#ffb347;
+    --ok:#22c55e; --warn:#f59e0b; --info:#3b82f6; --danger:#ef4444;
+    --ticket-width:58mm;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(14,15,18,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .brand{font-weight:900}.brand b{color:var(--accent)}
+  .pill{border:1px solid var(--line);background:#17191f;border-radius:999px;padding:8px 12px;color:#dfe7f3;text-decoration:none}
+  .pill.btn{cursor:pointer}
+  .money{background:linear-gradient(135deg,#1f8a41,#93f9a4);color:#072311;border:none;font-weight:800}
+  .wrap{max-width:1400px;margin:16px auto;padding:0 16px}
+  .subtabs{display:flex;gap:8px;margin:8px 0 14px}
+  .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:#17191f;cursor:pointer}
+  .tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#261106;border:none;font-weight:800}
+  .grid2{display:grid;grid-template-columns:1fr 360px;gap:16px}
+  @media (max-width:1100px){ .grid2{grid-template-columns:1fr} .side{order:-1} }
+  .board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  @media (max-width:1200px){ .board{grid-template-columns:repeat(4,1fr)} }
+  @media (max-width:900px){ .board{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:600px){ .board{grid-template-columns:repeat(2,1fr)} }
+
+  .tile{position:relative;background:#151821;border:1px solid var(--line);border-radius:22px;padding:12px;min-height:128px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;transition:.15s}
+  .tile:hover{transform:translateY(-2px)}
+  .tile.has-order{background:#0d2230;border-color:rgba(14,165,233,.35)}
+  .tile .edit{position:absolute;right:8px;top:8px;width:32px;height:32px;border-radius:10px;border:1px solid var(--line);background:#10141b;color:#dfe7f3;display:grid;place-items:center;cursor:pointer}
+  .tile .edit:hover{background:#17202b}
+  .num{font-weight:900}
+  .preview{margin-top:6px;background:linear-gradient(180deg, rgba(14,165,233,.25), rgba(14,165,233,.18));color:#e9f8ff;border:1px solid rgba(14,165,233,.35);border-radius:14px;padding:8px}
+  .pv-row{display:flex;justify-content:space-between;align-items:center}
+  .pv-chip{background:#0ea5e9;color:#082431;border:none;border-radius:999px;padding:3px 10px;font-weight:800}
+  .pv-sub{display:flex;gap:12px;align-items:center;opacity:.95}
+  .pv-sub small{opacity:.9}
+  .tag{padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:.8rem;background:#1b1f28;opacity:.7}
+
+  .side{position:sticky;top:72px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .list{display:flex;flex-direction:column;gap:10px;max-height:48vh;overflow:auto}
+  .item{display:grid;grid-template-columns:1fr 88px 24px;align-items:center;gap:8px;background:#151821;border:1px solid var(--line);border-radius:12px;padding:8px}
+  .qty{display:flex;gap:6px;justify-content:flex-end}
+  .qty button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:#1a1d25;color:#dfe7f3;cursor:pointer}
+  .rm{width:28px;height:28px}
+  .tot{border-top:1px dashed var(--line);margin-top:8px;padding-top:8px}
+  .row{display:flex;justify-content:space-between;margin:6px 0}
+  .row.total{font-weight:800}
+  .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .btn{border-radius:12px;padding:10px 12px;border:1px solid var(--line);cursor:pointer}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#251109;border:none;font-weight:800}
+  .btn.ok{background:linear-gradient(135deg,var(--ok),#a7efb1);color:#06260e;border:none;font-weight:800}
+  .btn.warn{background:#1f2a3d;color:#d9e7ff;border-color:#2a3347}
+  .btn.danger{background:#2a1618;color:#ffd6d6;border-color:#3a2325}
+
+  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);z-index:40}
+  .modal.show{display:grid}
+  .box{width:min(1280px,96vw);max-height:92vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+
+  /* Builder */
+  .builder{display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:start;min-height:460px}
+  @media (max-width:900px){ .builder{grid-template-columns:1fr} }
+  .search{display:flex;gap:8px;margin:6px 0 10px}
+  .search input{flex:1;background:#151821;border:1px solid var(--line);color:#fff;border-radius:10px;padding:10px}
+  .cats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#151821;color:#e8eefc;cursor:pointer}
+  .chip.active{background:#1f2633;border-color:#2a3347}
+  .products{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-height:60vh;overflow:auto}
+  @media (max-width:1100px){ .products{grid-template-columns:repeat(2,1fr)} }
+  .card{background:#151821;border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:78px}
+  .thumb{width:44px;height:44px;border-radius:10px;background:#0f1116;border:1px solid var(--line);display:grid;place-items:center;color:#ffd9a8;overflow:hidden}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .right-pane{background:#151821;border:1px solid var(--line);border-radius:12px;padding:10px;min-width:340px;max-height:60vh;overflow:auto}
+  .miniList{display:flex;flex-direction:column;gap:8px;max-height:36vh;overflow:auto}
+  .miniItem{display:grid;grid-template-columns:1fr 94px 24px;align-items:center;gap:8px;background:#11141b;border:1px solid var(--line);border-radius:10px;padding:8px}
+
+  /* Tarjetas Llevar/Delivery */
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media (max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:600px){.cards{grid-template-columns:1fr}}
+  .card-tile{background:#151821;border:1px solid var(--line);border-radius:22px;padding:12px;min-height:128px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;transition:.15s}
+  .card-tile:hover{transform:translateY(-2px)}
+  .card-head{display:flex;justify-content:space-between;align-items:center}
+  .card-badge{background:#0ea5e9;color:#082431;border:none;border-radius:999px;padding:3px 10px;font-weight:800}
+  .card-foot{display:flex;justify-content:space-between;align-items:center;opacity:.95}
+  .card-actions{display:flex;gap:6px;margin-top:8px}
+  .btn.icon{width:34px;height:34px;display:grid;place-items:center;border-radius:10px}
+
+ /* Inventario */
+.drawer{
+  position:fixed; right:0; top:0; height:100%;
+  width:min(920px,98vw);
+  background:#0f1218; border-left:1px solid var(--line);
+  box-shadow:-10px 0 30px rgba(0,0,0,.3);
+  transform:translateX(110%); transition:.2s; z-index:50;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.drawer.show{transform:none}
+.drawer .header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 14px; border-bottom:1px solid var(--line); background:#0f1218;
+}
+
+/* 👉 7 columnas: Producto | Precio | Stock | Categoría | Imagen | Guardar | Eliminar */
+.inv-grid{
+  padding:12px; display:grid;
+  grid-template-columns:2fr 120px 120px 1fr 120px 120px 120px;
+  gap:8px; align-items:center;
+}
+.inv-grid.head{font-weight:800; opacity:.8}
+
+.inv-row{
+  background:#121622; border:1px solid var(--line); border-radius:12px; padding:8px;
+  display:grid; grid-template-columns:2fr 120px 120px 1fr 120px 120px 120px;
+  gap:8px; align-items:center;
+}
+.inv-row input,.inv-row select{
+  width:100%; background:#0f1218; border:1px solid var(--line);
+  border-radius:10px; padding:8px; color:#fff;
+}
+.avatar{
+  width:42px; height:42px; border-radius:10px; overflow:hidden;
+  border:1px solid var(--line); background:#0f1116; display:grid; place-items:center;
+}
+.avatar img{width:100%; height:100%; object-fit:cover}
+
+/* Cuerpo con scroll vertical por si crece */
+.inv-body{
+  padding:12px; display:flex; flex-direction:column; gap:8px;
+  max-height:65vh; overflow:auto; border-top:1px dashed var(--line);
+}
+
+/* Botones compactos para que entren las 7 columnas sin cortar */
+.pill.btn{white-space:nowrap}
+
+  /* Historial */
+  .history{position:fixed;left:0;top:0;height:100%;width:min(920px,98vw);background:#0f1218;border-right:1px solid var(--line);box-shadow:10px 0 30px rgba(0,0,0,.3);transform:translateX(-110%);transition:.2s;z-index:60;display:flex;flex-direction:column}
+  .history.show{transform:none}
+  .history .header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#0f1218}
+  table.hist{width:100%;border-collapse:collapse}
+  table.hist th,table.hist td{border-bottom:1px solid var(--line);padding:10px;text-align:left}
+  table.hist th{opacity:.8}
+  .right{text-align:right}
+
+  /* ====== TICKET (58mm) ====== */
+  #ticket{
+    width:var(--ticket-width);
+    padding:6mm;
+    font-family:ui-monospace, Menlo, Consolas, monospace;
+    color:#000;
+    background:#fff;
+    display:none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #ticket.show{display:block}
+  #t-logo{display:flex;justify-content:center;align-items:center;margin-bottom:2mm}
+  #t-logo img{height:130px;max-width:100%;object-fit:contain}
+  #t-brand{margin:0 0 1mm;font-size:14pt;text-align:center}
+  #t-tagline{margin:0 0 2mm;font-size:9pt;text-align:center;opacity:.9}
+  #t-kind{font-size:12pt;font-weight:700;margin:2mm 0}
+  #ticket .small{font-size:9pt}
+  #ticket .row{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+  #ticket table{width:100%;border-collapse:collapse;margin:2mm 0;table-layout:fixed}
+  #ticket th,#ticket td{font-size:10pt;padding:1mm 0;border-bottom:1px dashed #ddd}
+  #ticket th:nth-child(1),#ticket td:nth-child(1){width:20%;text-align:left;padding-right:4mm;white-space:nowrap}
+  #ticket th:nth-child(2),#ticket td:nth-child(2){width:54%;text-align:left;padding:1mm 1mm;padding-left:3mm;word-wrap:break-word;overflow-wrap:anywhere}
+  #ticket th:nth-child(3),#ticket td:nth-child(3){width:26%;text-align:right;white-space:nowrap;padding-left:2mm}
+  #ticket .right{text-align:right}
+  #ticket .center{text-align:center}
+  #ticket .total{font-weight:700}
+  @media print{
+    @page{ size: var(--ticket-width) auto; margin: 0; }
+    html,body{ background:#fff !important; }
+    body > :not(#ticket){ display:none !important; }
+    #ticket{
+      display:block !important;
+      position:fixed !important;
+      top:0; left:0;
+      width:var(--ticket-width) !important;
+      margin:0 !important;
+      background:#fff !important;
+      color:#000 !important;
+      z-index:999999 !important;
+    }
+  }
+
+  /* ---- Panel derecho cómodo ---- */
+  .right-pane{ display:flex; flex-direction:column; gap:10px; min-width:420px; overflow-y:auto; overflow-x:hidden; }
+  .miniList{ flex:1 1 auto; }
+  .right-pane .actions{ display:flex; flex-wrap:wrap; gap:8px; }
+  #deliveryFields{ display:flex; flex-wrap:wrap; gap:8px; }
+  #deliveryFields .pill{ flex: 1 1 calc(50% - 4px); min-width:0; }
+  #deliveryFields .pill:last-child{ flex-basis:100%; }
+  @media (max-width: 1200px){
+    .right-pane{ min-width: auto; }
+    #deliveryFields .pill{ flex-basis: 100%; }
+  }
+  .right-pane *{ min-width: 0; }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">Lindero <b>Grill</b> — POS</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="pill money" id="soldToday"><i class="fa-solid fa-chart-line"></i> Hoy vendido: S/ 0.00</span>
+      <button class="pill btn" id="btnHistory"><i class="fa-solid fa-clock-rotate-left"></i> Historial</button>
+      <button class="pill btn" id="btnInventory"><i class="fa-solid fa-boxes-stacked"></i> Inventario</button>
+      <span class="pill" id="clock">--:--</span>
+      <a class="pill" href="/logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <nav class="subtabs" id="modes">
+      <button class="tab active" data-mode="mesa"><i class="fa-solid fa-chair"></i> Mesa</button>
+      <button class="tab" data-mode="llevar"><i class="fa-solid fa-bag-shopping"></i> Para llevar</button>
+      <button class="tab" data-mode="delivery"><i class="fa-solid fa-motorcycle"></i> Delivery</button>
+    </nav>
+
+    <!-- MESAS -->
+    <section class="grid2" id="view-mesa">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span class="pill">PISO 1</span>
+          <span class="muted">Toca una mesa para ver acciones • Usa el <b>lápiz</b> para editar el pedido</span>
+        </div>
+        <div class="board" id="board"></div>
+      </div>
+      <aside class="side">
+        <h3><i class="fa-solid fa-receipt"></i> Pedido actual</h3>
+        <div id="mesaLabel" class="muted">Sin mesa seleccionada</div>
+        <div class="list" id="cart"></div>
+        <div class="tot">
+          <div class="row"><span>Subtotal</span><span id="sub">S/ 0.00</span></div>
+          <div class="row total"><span>Total</span><span id="tot">S/ 0.00</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="guardar"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+          <button class="btn warn" id="precuenta"><i class="fa-solid fa-list-check"></i> Precuenta</button>
+          <button class="btn ok" id="cobrar"><i class="fa-solid fa-money-bill-wave"></i> Cobrar</button>
+          <button class="btn" id="imprimir"><i class="fa-solid fa-print"></i> Imprimir</button>
+          <button class="btn danger" id="liberar"><i class="fa-solid fa-broom"></i> Liberar</button>
+        </div>
+      </aside>
+    </section>
+
+    <!-- LLEVAR -->
+    <section class="grid2" id="view-llevar" style="display:none">
+      <div>
+        <div class="actions" style="margin:10px 0">
+          <button class="btn primary" id="btnNuevaLlevar"><i class="fa-solid fa-plus"></i> Nueva orden</button>
+        </div>
+        <div class="cards" id="listLlevar"></div>
+      </div>
+      <aside class="side">
+        <h3><i class="fa-solid fa-receipt"></i> Pedido actual</h3>
+        <div id="llevarLabel" class="muted">Sin orden seleccionada</div>
+        <div class="list" id="llevarCart"></div>
+        <div class="tot">
+          <div class="row"><span>Subtotal</span><span id="llevarSub">S/ 0.00</span></div>
+          <div class="row total"><span>Total</span><span id="llevarTot">S/ 0.00</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="llevarEdit"><i class="fa-solid fa-pen"></i> Editar</button>
+          <button class="btn ok" id="llevarCobrar"><i class="fa-solid fa-money-bill-wave"></i> Cobrar</button>
+          <button class="btn" id="llevarImprimir"><i class="fa-solid fa-print"></i> Imprimir</button>
+          <button class="btn danger" id="llevarCancelar"><i class="fa-solid fa-trash"></i> Cancelar</button>
+        </div>
+      </aside>
+    </section>
+
+    <!-- DELIVERY -->
+    <section class="grid2" id="view-delivery" style="display:none">
+      <div>
+        <div class="actions" style="margin:10px 0">
+          <button class="btn primary" id="btnNuevaDelivery"><i class="fa-solid fa-plus"></i> Nuevo delivery</button>
+        </div>
+        <div class="cards" id="listDelivery"></div>
+      </div>
+      <aside class="side">
+        <h3><i class="fa-solid fa-truck-fast"></i> Pedido actual</h3>
+        <div id="deliveryLabel" class="muted">Sin delivery seleccionado</div>
+        <div class="list" id="deliveryCart"></div>
+        <div class="tot">
+          <div class="row"><span>Subtotal</span><span id="deliverySub">S/ 0.00</span></div>
+          <div class="row total"><span>Total</span><span id="deliveryTot">S/ 0.00</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="deliveryEdit"><i class="fa-solid fa-pen"></i> Editar</button>
+          <button class="btn ok" id="deliveryCobrar"><i class="fa-solid fa-money-bill-wave"></i> Cobrar</button>
+          <button class="btn" id="deliveryImprimir"><i class="fa-solid fa-print"></i> Imprimir</button>
+          <button class="btn danger" id="deliveryCancelar"><i class="fa-solid fa-trash"></i> Cancelar</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <!-- TICKET -->
+  <section id="ticket" aria-hidden="true">
+    <div id="t-header">
+      <div id="t-logo"><img id="t-logo-img" alt="Lindero Grill"></div>
+      <h2 id="t-brand">Lindero Grill</h2>
+      <div class="center small" id="t-tagline">"El lugar del auténtico sabor"</div>
+    </div>
+    <h3 id="t-kind" class="center" style="margin:2mm 0 1mm">— —</h3>
+    <div class="row small"><span>Comanda:</span><span id="t-num">—</span></div>
+    <div class="row small"><span>Fecha-Hora:</span><span id="t-date">—</span></div>
+    <table>
+      <thead><tr><th>Cant.</th><th>Producto</th><th class="right">Sub.T</th></tr></thead>
+      <tbody id="t-body"></tbody>
+    </table>
+    <div class="row small total"><span>Total:</span><span id="t-total">S/ 0.00</span></div>
+    <div class="center small" id="t-footer" style="margin-top:2mm">¡Gracias por su compra!</div>
+  </section>
+
+  <!-- MODAL BUILDER -->
+  <div class="modal" id="modalBuild">
+    <div class="box">
+      <h4 id="buildTitle"><i class="fa-solid fa-list-ul"></i> Nueva orden</h4>
+      <div class="builder">
+        <div>
+          <div class="search">
+            <input id="q" placeholder="Buscar producto…">
+            <button class="btn" id="clearQ"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="cats" id="cats"></div>
+          <div class="products" id="grid"></div>
+        </div>
+        <div class="right-pane">
+          <div class="pill" id="buildContext">—</div>
+          <div class="miniList" id="mini"></div>
+          <div class="tot">
+            <div class="row"><span>Subtotal</span><span id="bsub">S/ 0.00</span></div>
+            <div class="row total"><span>Total</span><span id="btot">S/ 0.00</span></div>
+          </div>
+          <div class="f" id="deliveryFields" style="display:none">
+            <span class="pill"><i class="fa-solid fa-user"></i><input id="cliName" placeholder="Cliente" style="background:transparent;border:none;outline:none;color:#fff"></span>
+            <span class="pill"><i class="fa-solid fa-phone"></i><input id="cliPhone" placeholder="Teléfono" style="background:transparent;border:none;outline:none;color:#fff"></span>
+            <span class="pill" style="flex:1 1 100%"><i class="fa-solid fa-location-dot"></i><input id="cliAddr" placeholder="Dirección" style="background:transparent;border:none;outline:none;color:#fff;width:100%"></span>
+          </div>
+          <div class="actions">
+            <button class="btn" id="bCancel">Cancelar</button>
+            <button class="btn" id="bSave"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+            <button class="btn warn" id="bPre"><i class="fa-solid fa-list-check"></i> Precuenta</button>
+            <button class="btn ok" id="bPay"><i class="fa-solid fa-money-bill"></i> Cobrar</button>
+            <button class="btn" id="bPrint"><i class="fa-solid fa-print"></i> Imprimir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PAGO -->
+  <div class="modal" id="modalPay">
+    <div class="box">
+      <h4><i class="fa-solid fa-cash-register"></i> Cobrar</h4>
+      <div class="row" style="gap:8px;align-items:center">
+        <select id="payMethod">
+          <option value="cash">Efectivo</option>
+          <option value="card">Tarjeta</option>
+          <option value="qr">Yape/Plin</option>
+        </select>
+        <input type="number" id="payAmount" step="0.01" min="0" placeholder="Monto recibido"/>
+      </div>
+      <div class="actions">
+        <button class="btn" id="cancelPay">Cancelar</button>
+        <button class="btn ok" id="confirmPay">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTARIO -->
+  <aside class="drawer" id="inv">
+    <div class="header" style="gap:8px">
+      <h3 style="margin:0"><i class="fa-solid fa-boxes-stacked"></i> Inventario</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="invSearch" class="pill" placeholder="Filtrar…" style="background:#0f1218;border:1px solid var(--line);color:#fff;padding:8px;min-width:220px">
+        <button class="pill btn" id="addProduct"><i class="fa-solid fa-plus"></i> Nuevo producto</button>
+        <button class="pill btn" id="closeInv"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+      </div>
+    </div>
+<div class="inv-grid head">
+  <div>Producto</div>
+  <div>Precio</div>
+  <div>Stock</div>
+  <div>Categoría</div>
+  <div>Imagen</div>
+  <div>Guardar</div>
+  <div>Eliminar</div>
+</div>
+<div id="invBody" class="inv-body"></div>
+  </aside>
+
+  <!-- HISTORIAL (1 solo calendario) -->
+  <aside class="history" id="history">
+    <div class="header">
+      <h3 style="margin:0"><i class="fa-solid fa-clock-rotate-left"></i> Historial de ventas</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="date" id="hDay" class="pill" style="background:#0f1218;border:1px solid var(--line);color:#fff;padding:8px">
+        <button class="pill btn" id="hReload"><i class="fa-solid fa-rotate"></i> Cargar</button>
+        <button class="pill btn" id="hXlsx"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
+        <button class="pill btn" id="hClose"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+      </div>
+    </div>
+    <div style="padding:12px">
+      <table class="hist" id="histTable">
+        <thead><tr><th>Fecha</th><th class="right">Total vendido</th><th class="right">Comprobantes</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </aside>
+
+  <!-- SheetJS para generar XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+/* ========= Firebase ========= */
+// Firestore
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, onSnapshot,
+         serverTimestamp, query, where, Timestamp, runTransaction, orderBy, deleteDoc } 
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Storage
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } 
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAqP22yZtwqrhu40hpL4n8gf02dsf74NLY",
+  authDomain: "lindero-grill-pos.firebaseapp.com",
+  projectId: "lindero-grill-pos",
+  storageBucket: "lindero-grill-pos.firebasestorage.app",
+  messagingSenderId: "611892354863",
+  appId: "1:611892354863:web:27512bb7b7551244090bda"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const st   = getStorage(app);
+
+/* ========= Utils ========= */
+const $ = s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const fmt = n=>'S/ '+Number(n||0).toFixed(2);
+function nowStr(){ const d=new Date(); return d.toLocaleDateString()+' '+d.toLocaleTimeString().slice(0,8); }
+function ymd(d){
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60*1000);
+  return local.toISOString().slice(0,10);
+}
+setInterval(()=>$('#clock').textContent=nowStr(),1000);
+await new Promise(res=>onAuthStateChanged(auth,u=>u?res():signInAnonymously(auth)));
+
+const IGV_RATE = 0;
+let MODE='mesa', FLOOR='piso1';
+let CURRENT_TABLE=null;
+let CART={}; let PRODUCTS=[], CATS=[];
+let unsubTables=null, unsubOrdersToday=null;
+
+// Ticket / Boleta
+const TICKET_LOGO_URL = 'static/logo-ticket.png';
+const BUSINESS_NAME   = "Lindero Grill";
+const BUSINESS_TAGLINE= "El lugar del auténtico sabor";
+
+/* ========= Rango día ========= */
+function dayRange(dateObj){
+  const s=new Date(dateObj.getFullYear(),dateObj.getMonth(),dateObj.getDate(),0,0,0,0);
+  const e=new Date(dateObj.getFullYear(),dateObj.getMonth(),dateObj.getDate(),23,59,59,999);
+  return {start:Timestamp.fromDate(s),end:Timestamp.fromDate(e)};
+}
+
+/* ========= Hoy vendido ========= */
+{
+  const {start,end}=dayRange(new Date());
+  const qy=query(collection(db,'sales'), where('createdAt','>=',start), where('createdAt','<=',end));
+  onSnapshot(qy,snap=>{
+    let total=0; snap.forEach(d=>total+=(d.data().totals?.total||0));
+    $('#soldToday').innerHTML=`<i class="fa-solid fa-chart-line"></i> Hoy vendido: ${fmt(total)}`;
+  });
+}
+
+/* ========= Categorías / Productos ========= */
+const DEFAULT_CATS=[
+  {id:'bebidas',name:'Bebidas'},
+  {id:'gaseosas',name:'Gaseosas'},
+  {id:'pollos_brasa',name:'Pollos a la Brasa'},
+  {id:'pollos_broster',name:'Pollos Broster'},
+  {id:'parrillas_familiares',name:'Parrillas Familiares'},
+  {id:'guarniciones',name:'Guarniciones'},
+  {id:'ofertas_promos',name:'Ofertas y Promos'},
+];
+async function loadCats(){
+  CATS=[...DEFAULT_CATS];
+  $('#cats').innerHTML='<button class="chip active" data-cat="all">Todos</button>'+CATS.map(c=>`<button class="chip" data-cat="${c.id}">${c.name}</button>`).join('');
+}
+async function loadProducts(){
+  const snap=await getDocs(query(collection(db,'products'),orderBy('name')));
+  PRODUCTS=snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+await loadCats(); await loadProducts();
+
+/* ========= Mesas ========= */
+async function seedTablesIfEmpty(){
+  const s=await getDocs(collection(db,'floors',FLOOR,'tables')); if(s.size) return;
+  const tasks=[]; for(let n=1;n<=15;n++){
+    tasks.push(setDoc(doc(db,'floors',FLOOR,'tables','m'+n),{
+      number:n,status:'libre',total:0,currentOrderId:null,orderNo:null,updatedAt:serverTimestamp()
+    }));
+  }
+  await Promise.all(tasks);
+}
+await seedTablesIfEmpty(); listenTables();
+
+function listenTables(){
+  if(unsubTables) unsubTables();
+  unsubTables = onSnapshot(collection(db,'floors',FLOOR,'tables'), snap=>{
+    const mesas=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.number-b.number);
+    $('#board').innerHTML=mesas.map(m=>{
+      const has=m.currentOrderId; const cls=has?'has-order':''; const status=m.status||'libre';
+      const tag=status==='precuenta'?'Precuenta':(status==='preparacion'?'Preparación':'Libre');
+      const preview = has ? `
+        <div class="preview">
+          <div class="pv-row"><span class="pv-chip">${tag}</span><b>${fmt(m.total||0)}</b></div>
+          <div class="pv-sub"><small><i class="fa-solid fa-hashtag"></i> ${m.orderNo||'—'}</small><small><i class="fa-solid fa-user"></i> CAJA</small></div>
+        </div>` : `<span class="tag">Libre</span>`;
+      return `<div class="tile ${cls}" data-table="${m.id}" data-num="${m.number}">
+        <div class="num">Mesa ${m.number}</div>
+        <button class="edit" title="Editar pedido" data-edit="${m.id}"><i class="fa-solid fa-pen"></i></button>
+        ${preview}
+      </div>`;
+    }).join('');
+  });
+}
+
+/* ===== Clicks tablero ===== */
+$('#board').addEventListener('click', async (e)=>{
+  const editBtn=e.target.closest('[data-edit]');
+  if(editBtn){
+    const id=editBtn.dataset.edit;
+    const tRef=doc(db,'floors',FLOOR,'tables',id); const tSnap=await getDoc(tRef); const data=tSnap.data();
+    CURRENT_TABLE={id, number:data.number}; $('#mesaLabel').textContent='Mesa '+data.number;
+    if(data.currentOrderId){
+      const o=await getDoc(doc(db,'orders',data.currentOrderId));
+      openBuilder({mode:'mesa', table:CURRENT_TABLE, existing:o.exists()?{id:o.id,...o.data()}:null});
+    } else {
+      openBuilder({mode:'mesa', table:CURRENT_TABLE});
+    }
+    return;
+  }
+
+  const tile=e.target.closest('.tile'); if(!tile) return;
+  const id=tile.dataset.table, num=Number(tile.dataset.num);
+  CURRENT_TABLE={id, number:num}; $('#mesaLabel').textContent='Mesa '+num;
+
+  CART={};
+  const tRef=doc(db,'floors',FLOOR,'tables',id); const tSnap=await getDoc(tRef);
+  const orderId=tSnap.data()?.currentOrderId;
+  if(orderId){
+    const o=await getDoc(doc(db,'orders',orderId));
+    if(o.exists()){
+      o.data().items.forEach(it=>CART[it.id]={...it});
+    }
+  }
+  renderSideCart();
+});
+
+/* ===== Acciones laterales Mesa ===== */
+$('#guardar').onclick=()=>saveOrderForCurrentTable().catch(err=>alert('Error al guardar: '+err.message));
+$('#precuenta').onclick=()=>setMesaStatus('precuenta').catch(err=>alert(err.message));
+$('#cobrar').onclick=()=>openPay(calcTotals().tot);
+$('#imprimir').onclick=()=>{
+  const t=calcTotals(); if(!t.items.length){ alert('No hay ítems para imprimir'); return; }
+  renderTicket(t.items, CURRENT_TABLE?('Mesa '+CURRENT_TABLE.number):'Mostrador', t.tot, '—'); printAfterPaint();
+};
+$('#liberar').onclick=()=>liberarMesa().catch(err=>alert(err.message));
+
+async function setMesaStatus(st){
+  if(!CURRENT_TABLE) throw new Error('Selecciona una mesa');
+  const tRef=doc(db,'floors',FLOOR,'tables',CURRENT_TABLE.id);
+  const tSnap=await getDoc(tRef); const orderId=tSnap.data()?.currentOrderId;
+  if(!orderId) throw new Error('No hay pedido en esta mesa');
+  await updateDoc(doc(db,'orders',orderId),{status:st,updatedAt:serverTimestamp()});
+  await updateDoc(tRef,{status:st,updatedAt:serverTimestamp()});
+  alert(`${st==='precuenta'?'Precuenta':'Preparación'} ✅`);
+}
+
+/* ===== Carrito Mesa ===== */
+function calcTotals(listObj){
+  const items=Object.values(listObj||CART);
+  const sub=items.reduce((a,b)=>a+b.price*b.qty,0);
+  const igv=sub*IGV_RATE; return {items, sub, igv, tot:sub+igv};
+}
+function renderSideCart(){
+  const {items,sub,tot}=calcTotals();
+  $('#cart').innerHTML = items.length ? items.map(it=>`
+    <div class="item"><div><b>${it.name}</b><br><span class="muted">${fmt(it.price)}</span></div>
+    <div class="qty"><button data-op="-" data-id="${it.id}">-</button><span>${it.qty}</span><button data-op="+" data-id="${it.id}">+</button></div>
+    <button class="btn danger rm" data-op="x" data-id="${it.id}"><i class="fa-solid fa-xmark"></i></button></div>`).join('') : '<p class="muted">Carrito vacío.</p>';
+  $('#sub').textContent=fmt(sub); $('#tot').textContent=fmt(tot);
+}
+$('#cart').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; const it=CART[b.dataset.id]; if(!it) return;
+  if(b.dataset.op==='+') it.qty++;
+  if(b.dataset.op==='-'&&it.qty>1) it.qty--;
+  else if(b.dataset.op==='-'&&it.qty===1) delete CART[b.dataset.id];
+  if(b.dataset.op==='x') delete CART[b.dataset.id];
+  renderSideCart();
+});
+
+async function saveOrderForCurrentTable(){
+  if(!CURRENT_TABLE) throw new Error('Selecciona una mesa');
+  const {items,sub,tot}=calcTotals();
+  if(!items.length) throw new Error('Agrega productos al carrito');
+  const tRef=doc(db,'floors',FLOOR,'tables',CURRENT_TABLE.id);
+  const tSnap=await getDoc(tRef); let orderId=tSnap.data()?.currentOrderId;
+  if(!orderId){
+    const num = await nextOrderNo();
+    const oRef=await addDoc(collection(db,'orders'),{mode:'mesa',floorId:FLOOR,tableId:CURRENT_TABLE.id,items,subtotal:sub,igv:0,total:tot,status:'preparacion',orderNo:num,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    orderId=oRef.id;
+    await updateDoc(tRef,{currentOrderId:orderId,total:tot,status:'preparacion',orderNo:num,updatedAt:serverTimestamp()});
+  } else {
+    await updateDoc(doc(db,'orders',orderId),{items,subtotal:sub,igv:0,total:tot,updatedAt:serverTimestamp()});
+    await updateDoc(tRef,{total:tot,updatedAt:serverTimestamp()});
+  }
+  alert('Pedido guardado ✅');
+}
+
+async function liberarMesa(){
+  if(!CURRENT_TABLE) throw new Error('Selecciona una mesa');
+  if(!confirm('¿Liberar la mesa?')) return;
+  const tRef=doc(db,'floors',FLOOR,'tables',CURRENT_TABLE.id);
+  const tSnap=await getDoc(tRef); const orderId=tSnap.data()?.currentOrderId;
+  if(orderId){ await updateDoc(doc(db,'orders',orderId),{status:'cancelado',updatedAt:serverTimestamp()}); }
+  await updateDoc(tRef,{status:'libre',total:0,currentOrderId:null,orderNo:null,updatedAt:serverTimestamp()});
+  CURRENT_TABLE=null; CART={}; renderSideCart(); $('#mesaLabel').textContent='Sin mesa seleccionada';
+}
+
+/* ========= Constructor ========= */
+const modalBuild=$('#modalBuild'); let BMODE='mesa'; let BTABLE=null; let B_CART={}, B_PRODUCTS=[]; let B_EXISTING=null;
+function openBuilder({mode, table, existing=null}){
+  BMODE=mode; BTABLE = table||null; B_EXISTING=existing; B_CART={}; B_PRODUCTS=[...PRODUCTS];
+  $('#buildTitle').innerHTML = `<i class="fa-solid fa-list-ul"></i> ${existing?'Editar':'Nueva'} orden — ${mode==='mesa'?'Mesa '+(table?.number||'-'): (mode==='llevar'?'Para llevar':'Delivery')}`;
+  $('#buildContext').textContent = mode==='mesa' ? `Mesa ${table?.number||'-'}` : (mode==='llevar'?'Para llevar':'Delivery');
+  $('#deliveryFields').style.display = mode==='delivery' ? 'flex' : 'none';
+  if(existing?.items){ existing.items.forEach(it=>B_CART[it.id]={...it}); }
+  $('#q').value=''; renderBuilder();
+  modalBuild.classList.add('show');
+}
+$('#bCancel').onclick=()=>modalBuild.classList.remove('show');
+$('#clearQ').onclick=()=>{ $('#q').value=''; renderBuilder(); };
+$('#cats').addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b) return; $$('#cats .chip').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderBuilder(); });
+$('#q').addEventListener('input',renderBuilder);
+$('#grid').addEventListener('click',e=>{
+  const id=e.target.closest('[data-add]')?.dataset.add; if(!id) return;
+  const p=B_PRODUCTS.find(x=>x.id===id); if(!p) return;
+  if(!B_CART[p.id]) B_CART[p.id]={id:p.id,productId:p.id,name:p.name,price:Number(p.price||0),qty:0};
+  B_CART[p.id].qty++; renderBuilderCart();
+});
+$('#mini').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; const it=B_CART[b.dataset.id]; if(!it) return;
+  if(b.dataset.op==='+') it.qty++; if(b.dataset.op==='-'&&it.qty>1) it.qty--; else if(b.dataset.op==='-'&&it.qty===1) delete B_CART[b.dataset.id];
+  if(b.dataset.op==='x') delete B_CART[b.dataset.id]; renderBuilderCart();
+});
+function renderBuilder(){
+  const term=$('#q').value.toLowerCase(); const cat=$('#cats .chip.active')?.dataset.cat||'all';
+  const list=B_PRODUCTS.filter(p=>(cat==='all'||p.catId===cat)&&(term===''||p.name.toLowerCase().includes(term)));
+  $('#grid').innerHTML = list.map(p=>`
+    <div class="card">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="thumb">${p.img?`<img src="${p.img}">`:`<i class="fa-solid fa-drumstick-bite"></i>`}</div>
+        <div><div style="font-weight:700">${p.name}</div><div class="muted">${fmt(p.price)}</div></div>
+      </div>
+      <button class="btn primary" data-add="${p.id}"><i class="fa-solid fa-plus"></i> Agregar</button>
+    </div>`).join('');
+  renderBuilderCart();
+}
+function renderBuilderCart(){
+  const {items,sub,tot}=calcTotals(B_CART);
+  $('#mini').innerHTML = items.length ? items.map(it=>`
+    <div class="miniItem"><div><b>${it.name}</b><br><span class="muted">${fmt(it.price)}</span></div>
+      <div class="qty"><button data-op="-" data-id="${it.id}">-</button><span>${it.qty}</span><button data-op="+" data-id="${it.id}">+</button></div>
+      <button class="btn danger rm" data-op="x" data-id="${it.id}"><i class="fa-solid fa-xmark"></i></button></div>`).join('') : '<p class="muted">Agrega productos →</p>';
+  $('#bsub').textContent=fmt(sub); $('#btot').textContent=fmt(tot);
+}
+$('#bSave').onclick   = ()=>builderSaveLike('save').catch(err=>alert('Error: '+err.message));
+$('#bPre').onclick    = ()=>builderSaveLike('pre').catch(err=>alert('Error: '+err.message));
+$('#bPay').onclick    = ()=>builderSaveLike('pay').catch(err=>alert('Error: '+err.message));
+$('#bPrint').onclick  = ()=>{
+  const t=calcTotals(B_CART); if(!t.items.length){ alert('Nada para imprimir'); return; }
+  const label=(BMODE==='mesa'&&BTABLE)?('Mesa '+BTABLE.number):(BMODE==='llevar'?'Para llevar':'Delivery');
+  renderTicket(t.items,label,t.tot,'—'); printAfterPaint();
+};
+
+async function nextOrderNo(){
+  return await runTransaction(db, async (tx)=>{
+    const id=ymd(new Date());
+    const ref=doc(db,'counters','orders');
+    const snap=await tx.get(ref);
+    let current=0;
+    if(!snap.exists()){ tx.set(ref,{day:id,current:1}); current=1; }
+    else { const d=snap.data(); if(d.day!==id){ current=1; tx.update(ref,{day:id,current:1}); } else { current=(d.current||0)+1; tx.update(ref,{current}); } }
+    return String(current).padStart(4,'0');
+  });
+}
+async function builderSaveLike(action){
+  const {items,sub,tot}=calcTotals(B_CART);
+  if(!items.length) throw new Error('Agrega productos.');
+
+  let orderId=null;
+  const label = (BMODE==='mesa' ? ('Mesa '+BTABLE?.number) : (BMODE==='llevar'?'Para llevar':'Delivery'));
+
+  if (BMODE === 'mesa') {
+    const tRef = doc(db,'floors',FLOOR,'tables',BTABLE.id);
+    const tSnap = await getDoc(tRef);
+    orderId = tSnap.data()?.currentOrderId;
+
+    if (!orderId) {
+      const num = await nextOrderNo();
+      const oRef = await addDoc(collection(db,'orders'), {
+        mode:'mesa', floorId:FLOOR, tableId:BTABLE.id,
+        items, subtotal:sub, igv:0, total:tot,
+        status:'preparacion', orderNo:num,
+        createdAt:serverTimestamp(), updatedAt:serverTimestamp()
+      });
+      orderId = oRef.id;
+      await updateDoc(tRef, {
+        currentOrderId:orderId, total:tot, status:'preparacion', orderNo:num, updatedAt:serverTimestamp()
+      });
+    } else {
+      await updateDoc(doc(db,'orders',orderId), {
+        items, subtotal:sub, igv:0, total:tot, updatedAt:serverTimestamp()
+      });
+      await updateDoc(tRef,{ total:tot, updatedAt:serverTimestamp() });
+    }
+
+    if (action==='pre')  { await updateDoc(doc(db,'orders',orderId),{status:'precuenta'}); await updateDoc(tRef,{status:'precuenta'}); alert('Precuenta ✅'); }
+    if (action==='save') { alert('Pedido guardado ✅'); CART={}; items.forEach(it=>CART[it.id]={...it}); renderSideCart(); }
+    if (action==='pay')  { openPay(tot, {orderId, label, items, mode:'mesa', table:BTABLE}); return; }
+
+  } else {
+    const base = {
+      mode: BMODE, items, subtotal: sub, igv: 0, total: tot,
+      status: 'preparacion', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    };
+    if (BMODE === 'delivery') {
+      base.customer = {
+        name: $('#cliName').value || '',
+        phone: $('#cliPhone').value || '',
+        address: $('#cliAddr').value || ''
+      };
+    }
+
+    if (B_EXISTING && B_EXISTING.id) {
+      await updateDoc(doc(db, 'orders', B_EXISTING.id), base);
+      orderId = B_EXISTING.id;
+    } else {
+      const num = await nextOrderNo();
+      base.orderNo = num;
+      const oRef = await addDoc(collection(db, 'orders'), base);
+      orderId = oRef.id;
+    }
+
+    if (action === 'pre')  { await updateDoc(doc(db,'orders',orderId),{status:'precuenta'}); alert('Precuenta ✅'); }
+    if (action === 'save') { alert('Pedido guardado ✅'); }
+    if (action === 'pay')  { openPay(tot, {orderId, label, items, mode:BMODE}); return; }
+  }
+
+  modalBuild.classList.remove('show');
+}
+
+/* ========= Pedidos HOY (llevar/delivery) ========= */
+function watchOrdersToday(){
+  if (unsubOrdersToday) unsubOrdersToday();
+  const {start,end}=dayRange(new Date());
+  const qAll = query(
+    collection(db,'orders'),
+    where('createdAt','>=',start),
+    where('createdAt','<=',end),
+    orderBy('createdAt','desc')
+  );
+  unsubOrdersToday = onSnapshot(qAll, snap=>{
+    const all = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    const visible = o => (o.mode==='llevar'||o.mode==='delivery') && o.status!=='pagado' && o.status!=='cancelado';
+    renderOrders('#listLlevar',  all.filter(o=>visible(o)&&o.mode==='llevar'),  'llevar');
+    renderOrders('#listDelivery',all.filter(o=>visible(o)&&o.mode==='delivery'),'delivery');
+  });
+}
+
+function renderOrders(selector, list, kind){
+  const box=$(selector);
+  if(!list.length){ box.innerHTML='<p class="muted">No hay pedidos de hoy.</p>'; return; }
+  box.innerHTML = list.map((o,i)=>`
+    <div class="card-tile" data-open="${o.id}" data-kind="${kind}">
+      <div class="card-head">
+        <div style="font-weight:900">${kind==='llevar'?'PEDIDO':'DELIVERY'} ${String(i+1).padStart(2,'0')}</div>
+        <span class="card-badge">${o.status==='precuenta'?'Precuenta':'Preparación'}</span>
+      </div>
+      <div class="card-foot">
+        <div class="muted">#${o.orderNo||'—'} • ${o.items.length} ítem(s)</div>
+        <b>${fmt(o.total)}</b>
+      </div>
+      ${kind==='delivery' && (o.customer?.name||o.customer?.phone||o.customer?.address) ? 
+        `<div class="muted" style="margin-top:6px"><i class="fa-solid fa-user"></i> ${(o.customer?.name||'')}
+          ${o.customer?.phone?(' • '+o.customer.phone):''}
+          ${o.customer?.address?(' • '+o.customer.address):''}</div>`:''}
+      <div class="card-actions">
+        <button class="btn icon" title="Editar"   data-ed="${o.id}"  data-kind="${kind}"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn icon" title="Imprimir" data-pr="${o.id}"  data-kind="${kind}"><i class="fa-solid fa-print"></i></button>
+        <button class="btn icon" title="Cobrar"   data-co="${o.id}"  data-kind="${kind}"><i class="fa-solid fa-money-bill"></i></button>
+        <button class="btn icon danger" title="Eliminar" data-del="${o.id}" data-kind="${kind}"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+
+  box.querySelectorAll('[data-open],[data-ed],[data-pr],[data-co],[data-del]').forEach(el=>{
+    el.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const id = el.dataset.open||el.dataset.ed||el.dataset.pr||el.dataset.co||el.dataset.del;
+      const o=await getDoc(doc(db,'orders',id)); if(!o.exists()) return;
+      const data=o.data();
+
+      if(kind==='llevar'){ CURRENT_LLEVAR={id:o.id, ...data}; showLlevarDetails(CURRENT_LLEVAR); }
+      if(kind==='delivery'){ CURRENT_DELIVERY={id:o.id, ...data}; showDeliveryDetails(CURRENT_DELIVERY); }
+
+      if(el.dataset.ed)  editOrder(id, kind);
+      if(el.dataset.pr)  printOrderId(id, kind);
+      if(el.dataset.co)  chargeOrderId(id, kind);
+      if(el.dataset.del){ if(confirm('¿Cancelar pedido?')) await updateDoc(doc(db,'orders',id),{status:'cancelado',updatedAt:serverTimestamp()}); }
+    }, {once:false});
+  });
+}
+
+function editOrder(id, kind){
+  (async ()=>{ const o=await getDoc(doc(db,'orders',id)); if(!o.exists()) return;
+    const data=o.data();
+    BMODE = data.mode; BTABLE=null; B_EXISTING={id:o.id,...data}; B_CART={}; data.items.forEach(it=>B_CART[it.id]={...it});
+    $('#buildTitle').innerHTML = `<i class="fa-solid fa-list-ul"></i> Editar orden — ${data.mode==='llevar'?'Para llevar':'Delivery'}`;
+    $('#buildContext').textContent = data.mode==='llevar'?'Para llevar':'Delivery';
+    $('#deliveryFields').style.display = data.mode==='delivery' ? 'flex' : 'none';
+    modalBuild.classList.add('show'); renderBuilder(); renderBuilderCart();
+  })();
+}
+function printOrderId(id, kind){
+  (async ()=>{ const o=await getDoc(doc(db,'orders',id)); if(!o.exists()) return;
+    const data=o.data(); renderTicket(data.items, data.mode==='llevar'?'Para Llevar':'Delivery', data.total, data.orderNo||'—'); printAfterPaint();
+  })();
+}
+function chargeOrderId(id, kind){
+  (async ()=>{ const o=await getDoc(doc(db,'orders',id)); if(!o.exists()) return;
+    const data=o.data(); openPay(data.total, {orderId:id,label:data.mode==='llevar'?'Para llevar':'Delivery',items:data.items,mode:data.mode});
+  })();
+}
+
+/* ========= Panel lateral Llevar/Delivery ========= */
+let CURRENT_LLEVAR=null, CURRENT_DELIVERY=null;
+function showLlevarDetails(o){
+  $('#llevarLabel').textContent = o ? (`Pedido #${o.orderNo||'—'} • Para llevar`) : 'Sin orden seleccionada';
+  if(!o){ $('#llevarCart').innerHTML='<p class="muted">Sin orden.</p>'; $('#llevarSub').textContent='S/ 0.00'; $('#llevarTot').textContent='S/ 0.00'; return; }
+  const items = o.items||[];
+  const sub = items.reduce((a,b)=>a+b.price*b.qty,0);
+  $('#llevarCart').innerHTML = items.length ? items.map(it=>`
+    <div class="item"><div><b>${it.name}</b><br><span class="muted">${fmt(it.price)}</span></div>
+      <div class="qty"><span>${it.qty}</span></div>
+      <span></span></div>`).join('') : '<p class="muted">Sin ítems.</p>';
+  $('#llevarSub').textContent=fmt(sub); $('#llevarTot').textContent=fmt(sub);
+}
+$('#llevarEdit').onclick = ()=>{ if(!CURRENT_LLEVAR) return alert('Selecciona un pedido'); editOrder(CURRENT_LLEVAR.id,'llevar'); };
+$('#llevarImprimir').onclick = ()=>{ if(!CURRENT_LLEVAR) return alert('Selecciona un pedido'); printOrderId(CURRENT_LLEVAR.id,'llevar'); };
+$('#llevarCobrar').onclick = ()=>{ if(!CURRENT_LLEVAR) return alert('Selecciona un pedido'); chargeOrderId(CURRENT_LLEVAR.id,'llevar'); };
+$('#llevarCancelar').onclick = async ()=>{ if(!CURRENT_LLEVAR) return alert('Selecciona un pedido'); if(confirm('¿Cancelar pedido?')) await updateDoc(doc(db,'orders',CURRENT_LLEVAR.id),{status:'cancelado',updatedAt:serverTimestamp()}); };
+
+function showDeliveryDetails(o){
+  $('#deliveryLabel').textContent = o ? (`Delivery #${o.orderNo || '—'}`) : 'Sin delivery seleccionado';
+  if(!o){ $('#deliveryCart').innerHTML='<p class="muted">Sin orden.</p>'; $('#deliverySub').textContent='S/ 0.00'; $('#deliveryTot').textContent='S/ 0.00'; return; }
+  const items = o.items || [];
+  const sub = items.reduce((a,b)=>a + b.price * b.qty, 0);
+  $('#deliveryCart').innerHTML = items.length
+    ? items.map(it => `<div class="item"><div><b>${it.name}</b><br><span class="muted">${fmt(it.price)}</span></div><div class="qty"><span>${it.qty}</span></div><span></span></div>`).join('')
+    : '<p class="muted">Sin ítems.</p>';
+  $('#deliverySub').textContent = fmt(sub);
+  $('#deliveryTot').textContent = fmt(sub);
+}
+$('#deliveryEdit').onclick     = ()=>{ if(!CURRENT_DELIVERY) return alert('Selecciona un delivery'); editOrder(CURRENT_DELIVERY.id,'delivery'); };
+$('#deliveryImprimir').onclick = ()=>{ if(!CURRENT_DELIVERY) return alert('Selecciona un delivery'); printOrderId(CURRENT_DELIVERY.id,'delivery'); };
+$('#deliveryCobrar').onclick   = ()=>{ if(!CURRENT_DELIVERY) return alert('Selecciona un delivery'); chargeOrderId(CURRENT_DELIVERY.id,'delivery'); };
+$('#deliveryCancelar').onclick = async ()=>{
+  if(!CURRENT_DELIVERY) return alert('Selecciona un delivery');
+  if(confirm('¿Cancelar pedido?')) await updateDoc(doc(db,'orders',CURRENT_DELIVERY.id),{status:'cancelado',updatedAt:serverTimestamp()});
+};
+
+/* ========= Pago ========= */
+const modalPay=$('#modalPay'); const payMethod=$('#payMethod'); const payAmount=$('#payAmount');
+function openPay(total, context=null){ payAmount.value=Number(total||0).toFixed(2); modalPay.classList.add('show'); modalPay.dataset.ctx=context?JSON.stringify(context):''; }
+$('#cancelPay').onclick=()=>{ modalPay.classList.remove('show'); modalPay.dataset.ctx=''; };
+$('#confirmPay').onclick = async ()=>{
+  const amount=Number(payAmount.value||0); const method=payMethod.value;
+  const ctx = modalPay.dataset.ctx ? JSON.parse(modalPay.dataset.ctx) : null;
+
+  let items, label, orderId, orderMode;
+  if(!ctx){
+    const t=calcTotals(); items=t.items; label = CURRENT_TABLE?('Mesa '+CURRENT_TABLE.number):'Mostrador';
+    orderMode = CURRENT_TABLE ? 'mesa' : 'llevar';
+    if(CURRENT_TABLE){
+      const tRef=doc(db,'floors',FLOOR,'tables',CURRENT_TABLE.id);
+      const tSnap=await getDoc(tRef); orderId=tSnap.data()?.currentOrderId;
+      if(!orderId){
+        const num=await nextOrderNo();
+        const oRef=await addDoc(collection(db,'orders'),{mode:'mesa',floorId:FLOOR,tableId:CURRENT_TABLE.id,items,subtotal:t.sub,igv:0,total:t.tot,status:'preparacion',orderNo:num,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        orderId=oRef.id; await updateDoc(tRef,{currentOrderId:orderId,total:t.tot,status:'preparacion',orderNo:num,updatedAt:serverTimestamp()});
+      } else {
+        await updateDoc(doc(db,'orders',orderId),{items,subtotal:t.sub,igv:0,total:t.tot,updatedAt:serverTimestamp()});
+      }
+    } else {
+      const oRef=await addDoc(collection(db,'orders'),{mode:'llevar',items,subtotal:t.sub,igv:0,total:t.tot,status:'preparacion',createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      orderId=oRef.id;
+    }
+  } else { items=ctx.items; label=ctx.label; orderId=ctx.orderId; orderMode=ctx.mode; }
+
+  const total = items.reduce((a,b)=>a+b.price*b.qty,0);
+  if(amount < total){ alert('Monto insuficiente'); return; }
+
+  const num = await runTransaction(db, async (tx)=>{
+    const id=ymd(new Date());
+    const ref=doc(db,'counters','sales');
+    const snap=await tx.get(ref);
+    let current=0;
+    if(!snap.exists()){ tx.set(ref,{day:id,current:1}); current=1; }
+    else { const d=snap.data(); if(d.day!==id){ current=1; tx.update(ref,{day:id,current:1}); } else { current=(d.current||0)+1; tx.update(ref,{current}); } }
+    return String(current).padStart(4,'0');
+  });
+
+  await addDoc(collection(db,'sales'),{
+    orderId, receiptNo:num, totals:{subtotal:total, igv:0, total},
+    payments:[{method,amount}], createdAt:serverTimestamp()
+  });
+
+  await updateDoc(doc(db,'orders',orderId),{status:'pagado',stockAdjusted:true,updatedAt:serverTimestamp()});
+
+  await adjustStock(items);
+
+  if(CURRENT_TABLE){
+    await updateDoc(doc(db,'floors',FLOOR,'tables',CURRENT_TABLE.id),{status:'libre',total:0,currentOrderId:null,orderNo:null,updatedAt:serverTimestamp()});
+    CURRENT_TABLE=null; CART={}; renderSideCart(); $('#mesaLabel').textContent='Sin mesa seleccionada';
+  }
+
+  modalPay.classList.remove('show'); modalPay.dataset.ctx='';
+  renderTicket(items,label,total,num); printAfterPaint();
+};
+
+/* ===== Descuenta stock (a prueba de negativos) ===== */
+async function adjustStock(items){
+  const updates = items.map(it=>runTransaction(db, async (tx)=>{
+    const pRef = doc(db,'products', it.productId || it.id);
+    const snap = await tx.get(pRef);
+    if(!snap.exists()) return;
+    const cur = Number(snap.data().stock||0);
+    const next = Math.max(0, cur - Number(it.qty||0));
+    tx.update(pRef, { stock: next, updatedAt: serverTimestamp() });
+  }));
+  await Promise.all(updates);
+}
+
+/* ===== Print helpers ===== */
+function printAfterPaint(){
+  return new Promise(resolve=>{
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        window.print();
+        resolve();
+      });
+    });
+  });
+}
+window.addEventListener('afterprint', ()=>{ document.getElementById('ticket').classList.remove('show'); });
+
+/* ===== Ticket render ===== */
+function renderTicket(items, label, total, num){
+  document.getElementById('t-logo-img').src = TICKET_LOGO_URL;
+  document.getElementById('t-brand').textContent = BUSINESS_NAME;
+  document.getElementById('t-tagline').textContent = `"${BUSINESS_TAGLINE}"`;
+  document.getElementById('t-kind').textContent = label || '—';
+  document.getElementById('t-num').textContent  = num || ('B' + Date.now());
+  document.getElementById('t-date').textContent = new Date().toLocaleString();
+  const rows = items.map(it => `
+    <tr>
+      <td>${it.qty}</td>
+      <td>${it.name}</td>
+      <td class="right">S/ ${Number(it.qty * it.price).toFixed(2)}</td>
+    </tr>`).join('');
+  document.getElementById('t-body').innerHTML = rows;
+  document.getElementById('t-total').textContent = 'S/ ' + Number(total||0).toFixed(2);
+  const t = document.getElementById('ticket');
+  t.classList.add('show');
+}
+
+/* ========= Modos ========= */
+$('#modes').addEventListener('click',(e)=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  $$('#modes .tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  MODE=b.dataset.mode;
+  $('#view-mesa').style.display    = MODE==='mesa'?'grid':'none';
+  $('#view-llevar').style.display  = MODE==='llevar'?'grid':'none';
+  $('#view-delivery').style.display= MODE==='delivery'?'grid':'none';
+  if(MODE!=='mesa') watchOrdersToday();
+});
+$('#btnNuevaLlevar').onclick=()=>openBuilder({mode:'llevar'});
+$('#btnNuevaDelivery').onclick=()=>openBuilder({mode:'delivery'});
+
+/* ========= INVENTARIO ========= */
+const inv = $('#inv');
+$('#btnInventory').onclick=()=>{ inv.classList.add('show'); renderInventory(); };
+$('#closeInv').onclick=()=>inv.classList.remove('show');
+$('#addProduct').onclick=()=>addInventoryRow();
+$('#invSearch').addEventListener('input',()=>renderInventory($('#invSearch').value.trim().toLowerCase()));
+
+function addInventoryRow(p=null){
+  const id = p?.id || ('tmp_'+Math.random().toString(36).slice(2));
+  const row = document.createElement('div');
+  row.className='inv-row'; 
+  row.dataset.id=id;
+
+  row.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="avatar">${p?.img?`<img src="${p.img}">`:'<i class="fa-solid fa-image"></i>'}</div>
+      <input placeholder="Nombre" value="${p?.name||''}" class="pname">
+    </div>
+    <input type="number" step="0.01" min="0" value="${p?.price??0}" class="pprice">
+    <input type="number" step="1" min="0" value="${p?.stock??0}" class="pstock">
+    <select class="pcat">
+      ${CATS.map(c=>`<option value="${c.id}" ${p?.catId===c.id?'selected':''}>${c.name}</option>`).join('')}
+    </select>
+    <div>
+      <input type="file" accept="image/*" class="pimg" style="display:none">
+      <button class="pill btn up"><i class="fa-solid fa-upload"></i> Subir</button>
+    </div>
+    <button class="pill btn save"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+    <button class="pill btn danger del"><i class="fa-solid fa-trash"></i> Eliminar</button>
+  `;
+
+  // Insertar la fila arriba
+  $('#invBody').prepend(row);
+
+  // Subir imagen
+  row.querySelector('.up').onclick = ()=> row.querySelector('.pimg').click();
+  row.querySelector('.pimg').onchange = async (ev)=>{
+    const file = ev.target.files[0]; 
+    if(!file) return;
+    const ref = sRef(st, `products/${id}.jpg`);
+    await uploadBytes(ref, file);
+    const url = await getDownloadURL(ref);
+    row.dataset.img = url;
+    row.querySelector('.avatar').innerHTML = `<img src="${url}">`;
+  };
+
+  // Guardar (crea si es tmp_, actualiza si ya existe)
+  row.querySelector('.save').onclick = async ()=>{
+    const name = row.querySelector('.pname').value.trim();
+    const price= Number(row.querySelector('.pprice').value||0);
+    const stock= Number(row.querySelector('.pstock').value||0);
+    const catId= row.querySelector('.pcat').value;
+    const img  = row.dataset.img || p?.img || '';
+
+    if(!name){ alert('Nombre requerido'); return; }
+
+    if(String(id).startsWith('tmp_')){
+      // crear nuevo
+      const ref = await addDoc(collection(db,'products'),{
+        name, price, stock, catId, img, createdAt:serverTimestamp(), updatedAt:serverTimestamp()
+      });
+      row.dataset.id = ref.id;
+    } else {
+      // actualizar existente
+      await updateDoc(doc(db,'products', id),{
+        name, price, stock, catId, img, updatedAt:serverTimestamp()
+      });
+    }
+
+    await loadProducts();   // refresca catálogo en el builder
+    renderBuilder();
+    await renderInventory($('#invSearch').value.trim().toLowerCase()); // refresca tabla
+    alert('Producto guardado ✅');
+  };
+
+  // Eliminar
+  row.querySelector('.del').onclick = async ()=>{
+    const currentId = row.dataset.id;
+
+    // Si aún es temporal (no guardado), solo quita la fila
+    if (String(currentId).startsWith('tmp_')) { row.remove(); return; }
+
+    if(!confirm('¿Eliminar este producto del inventario?')) return;
+
+    try{
+      await deleteDoc(doc(db,'products', currentId));
+    }catch(e){
+      console.error('Error al borrar doc:', e);
+    }
+
+    // Intentar borrar imagen estándar (ignoramos error si no existe)
+    try{
+      await deleteObject(sRef(st, `products/${currentId}.jpg`));
+    }catch(e){ /* no-op */ }
+
+    await loadProducts();
+    renderBuilder();
+    await renderInventory($('#invSearch').value.trim().toLowerCase());
+    alert('Producto eliminado ✅');
+  };
+}
+
+async function renderInventory(filter=''){
+  $('#invBody').innerHTML='';
+  const snap=await getDocs(query(collection(db,'products'),orderBy('name')));
+  if(!snap.size){ addInventoryRow(); return; }
+  snap.forEach(d=>{
+    const p={id:d.id,...d.data()};
+    if(filter && !(p.name||'').toLowerCase().includes(filter)) return;
+    addInventoryRow(p);
+  });
+}
+
+/* ========= HISTORIAL (1 día) ========= */
+const hist = $('#history');
+$('#btnHistory').onclick=()=>{ hist.classList.add('show'); initHistoryDate(); loadHistory(); };
+$('#hClose').onclick=()=>hist.classList.remove('show');
+$('#hReload').onclick=()=>loadHistory();
+$('#hXlsx').onclick=()=>downloadHistoryXlsx().catch(err=>alert('Error al generar Excel: '+err.message));
+
+function initHistoryDate(){
+  const today = ymd(new Date());
+  $('#hDay').value = today;
+}
+async function loadHistory(){
+  const dayStr = $('#hDay').value || ymd(new Date());
+  const fromDate = new Date(dayStr + 'T00:00:00');
+  const toDate   = new Date(dayStr + 'T23:59:59');
+
+  const qy = query(
+    collection(db,'sales'),
+    where('createdAt','>=', Timestamp.fromDate(fromDate)),
+    where('createdAt','<=', Timestamp.fromDate(toDate)),
+    orderBy('createdAt','desc')
+  );
+
+  const snap = await getDocs(qy);
+  const map = new Map();
+
+  snap.forEach(d => {
+    const dt = d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date(d.data().createdAt);
+    const k  = ymd(dt);
+    const tot = d.data().totals?.total || 0;
+    const row = map.get(k) || { total:0, count:0 };
+    row.total += tot; row.count++;
+    map.set(k, row);
+  });
+
+  const rows = [...map.entries()].sort((a,b)=> a[0] < b[0] ? 1 : -1);
+  const tbody = $('#histTable tbody');
+  tbody.innerHTML = rows.length
+    ? rows.map(([d,r])=>`<tr><td>${d}</td><td class="right"><b>${fmt(r.total)}</b></td><td class="right">${r.count}</td></tr>`).join('')
+    : `<tr><td colspan="3" class="muted">Sin ventas en la fecha.</td></tr>`;
+}
+
+/* ======= Descargar Excel con TODAS las ventas del día ======= */
+async function downloadHistoryXlsx(){
+  const dayStr = $('#hDay').value || ymd(new Date());
+  const fromDate = new Date(dayStr + 'T00:00:00');
+  const toDate   = new Date(dayStr + 'T23:59:59');
+
+  const qy = query(
+    collection(db,'sales'),
+    where('createdAt','>=', Timestamp.fromDate(fromDate)),
+    where('createdAt','<=', Timestamp.fromDate(toDate)),
+    orderBy('createdAt','desc')
+  );
+  const snap = await getDocs(qy);
+  if(snap.empty){ alert('No hay ventas en esa fecha.'); return; }
+
+  const rows = [];
+  for (const docSnap of snap.docs){
+    const s = docSnap.data();
+    const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+    const orderRef = doc(db,'orders', s.orderId);
+    const orderSnap = await getDoc(orderRef);
+    const order = orderSnap.exists() ? orderSnap.data() : {};
+    const items = order.items || [];
+    const mode  = (order.mode||'').toUpperCase();
+    const receipt = s.receiptNo || '';
+    const payMethod = (s.payments?.[0]?.method || '').toUpperCase();
+
+    items.forEach(it=>{
+      rows.push({
+        Fecha: created.toLocaleDateString(),
+        Hora:  created.toLocaleTimeString().slice(0,8),
+        Comprobante: receipt,
+        Modo: mode,
+        Producto: it.name,
+        Cantidad: Number(it.qty||0),
+        Precio: Number(it.price||0),
+        Subtotal_Item: Number((it.qty||0)*(it.price||0)),
+        Total_orden: Number(s.totals?.total||0),
+        Metodo_Pago: payMethod,
+        OrderID: s.orderId
+      });
+    });
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const headers = Object.keys(rows[0]||{
+    Fecha:'',Hora:'',Comprobante:'',Modo:'',Producto:'',Cantidad:'',Precio:'',Subtotal_Item:'',Total_orden:'',Metodo_Pago:'',OrderID:''
+  });
+  ws['!cols'] = headers.map(h=>({wch: Math.max(12, String(h).length + 2)}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Ventas_'+dayStr);
+  XLSX.writeFile(wb, `Ventas_${dayStr}.xlsx`);
+}
+
+/* ========= Init ========= */
+watchOrdersToday();
+</script>
+</body>
+</html>

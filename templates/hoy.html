@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Hoy • Lindero Grill</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+  <style>
+    :root{
+      --bg:#0e0f12; --surface:#121318; --soft:#1a1c22; --line:rgba(255,255,255,.08);
+      --text:#ecf0f8; --muted:#a7b0c2;
+      --accent:#ff7a00; --accent2:#ffb347;
+      --ok:#22c55e; --warn:#f59e0b; --info:#3b82f6; --danger:#ef4444;
+      --ticket-width:58mm;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:#93f9a4;text-decoration:none}
+    .wrap{max-width:1200px;margin:18px auto;padding:0 14px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .brand{font-weight:900}.brand b{color:var(--accent)}
+    .pill{border:1px solid var(--line);background:#17191f;border-radius:999px;padding:10px 12px}
+    .btn{border:1px solid var(--line);background:#17191f;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn.ok{background:linear-gradient(135deg,var(--ok),#a7efb1);color:#06260e;border:none;font-weight:800}
+    .btn.warn{background:#1f2a3d;color:#d9e7ff;border-color:#2a3347}
+    .btn.danger{background:#2a1618;color:#ffd6d6;border-color:#3a2325}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#251109;border:none;font-weight:800}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px}
+    .sale{display:grid;grid-template-columns:200px 1fr 260px;gap:10px;align-items:start}
+    .meta{font-size:.95rem}
+    .muted{opacity:.8}
+    .items{background:#0f1118;border:1px solid var(--line);border-radius:10px;padding:8px;max-height:220px;overflow:auto}
+    .row{display:flex;justify-content:space-between;gap:8px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .tot{font-weight:900}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#1a1d25;white-space:nowrap}
+    .chip.ok{border-color:rgba(34,197,94,.35)}
+    .chip.warn{border-color:rgba(245,158,11,.35)}
+    .chip.danger{border-color:rgba(239,68,68,.35)}
+    .hl{color:#ffd59e}
+    .list{display:flex;flex-direction:column;gap:10px}
+    .right{text-align:right}
+    .search{display:flex;gap:8px;margin:8px 0 14px}
+    .search input{flex:1;background:#151821;border:1px solid var(--line);color:#fff;border-radius:10px;padding:10px 12px}
+    .search .btn{white-space:nowrap}
+    .empty{padding:16px;border:1px dashed var(--line);border-radius:12px;opacity:.8;text-align:center}
+
+    /* Modal base */
+    .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);z-index:40;padding:8px}
+    .modal.show{display:grid}
+    .box{width:min(1100px,96vw);max-height:96vh;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;position:relative}
+    .btn-x{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#10141b;color:#dfe7f3;display:grid;place-items:center;cursor:pointer}
+    .btn-x:hover{background:#17202b}
+
+    /* Modal cambio */
+    .modal .body{display:grid;grid-template-columns:1fr 460px;gap:12px}
+    .products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-height:60vh;overflow:auto}
+    .cardp{background:#11141b;border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+    .miniList{background:#11141b;border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px;max-height:58vh;overflow:auto}
+    .miniItem{display:grid;grid-template-columns:1fr 100px 32px;gap:8px;align-items:center;background:#0f1218;border:1px solid var(--line);border-radius:10px;padding:8px}
+    .qty{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+    .qty button{min-width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#1a1d25;color:#dfe7f3;cursor:pointer}
+    .sum{border-top:1px dashed var(--line);margin-top:6px;padding-top:6px}
+    .mode-box{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+    .radio-pill{display:flex;gap:6px;align-items:center;border:1px solid var(--line);background:#10141b;border-radius:999px;padding:6px 10px}
+    @media (max-width:980px){ .sale{grid-template-columns:1fr} .modal .body{grid-template-columns:1fr} .products{grid-template-columns:1fr} }
+
+    /* Ticket (impresión) */
+    #ticket{width:var(--ticket-width);padding:6mm;font-family:ui-monospace,Menlo,Consolas,monospace;color:#000;background:#fff;display:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #ticket.show{display:block}
+    #t-logo{display:flex;justify-content:center;align-items:center;margin-bottom:2mm}
+    #t-logo img{height:130px;max-width:100%;object-fit:contain}
+    #t-brand{margin:0 0 1mm;font-size:14pt;text-align:center}
+    #t-tagline{margin:0 0 2mm;font-size:9pt;text-align:center;opacity:.9}
+    #t-kind{font-size:12pt;font-weight:700;margin:2mm 0;text-align:center}
+    #ticket .small{font-size:9pt}
+    #ticket table{width:100%;border-collapse:collapse;margin:2mm 0;table-layout:fixed}
+    #ticket th,#ticket td{font-size:10pt;padding:1mm 0;border-bottom:1px dashed #ddd}
+    #ticket th:nth-child(1),#ticket td:nth-child(1){width:20%;text-align:left;padding-right:4mm;white-space:nowrap}
+    #ticket th:nth-child(2),#ticket td:nth-child(2){width:54%;text-align:left;padding-left:3mm;overflow-wrap:anywhere}
+    #ticket th:nth-child(3),#ticket td:nth-child(3){width:26%;text-align:right;white-space:nowrap;padding-left:2mm}
+    #ticket .right{text-align:right}
+    #ticket .total{font-weight:700}
+    @media print{
+      @page{ size: var(--ticket-width) auto; margin:0; }
+      body>*:not(#ticket){ display:none !important; }
+      #ticket{display:block !important;position:fixed !important; top:0; left:0; width:var(--ticket-width) !important;margin:0 !important;background:#fff !important;color:#000 !important; z-index:999999 !important;}
+    }
+
+    /* Toast simple */
+    .toaster{position:fixed;top:14px;right:14px;z-index:1100;display:flex;flex-direction:column;gap:8px}
+    .toast{background:#121420;border:1px solid var(--line);color:#fff;padding:10px 12px;border-radius:12px;min-width:260px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px}
+    .err{padding:12px;border:1px solid rgba(239,68,68,.4);border-radius:12px;background:#2a1618;margin:8px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand"><i class="fa-solid fa-fire"></i> Lindero <b>Grill</b> — Ventas de Hoy</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <a class="pill btn" href="panel"><i class="fa-solid fa-circle-arrow-left"></i> Volver al panel</a>
+        <span class="pill" id="resume">—</span>
+      </div>
+    </div>
+
+    <div class="search">
+      <input id="q" placeholder="Buscar por recibo, método, producto o modo…">
+      <button class="btn" id="clearQ" title="Limpiar"><i class="fa-solid fa-broom"></i></button>
+    </div>
+
+    <div id="errBox"></div>
+    <div class="grid">
+      <div id="list" class="list"></div>
+    </div>
+  </div>
+
+  <!-- Ticket -->
+  <section id="ticket" aria-hidden="true">
+    <div id="t-header">
+      <div id="t-logo"><img id="t-logo-img" alt="Lindero Grill"></div>
+      <h2 id="t-brand">Lindero Grill</h2>
+      <div class="small" id="t-tagline" style="text-align:center">"El lugar del auténtico sabor"</div>
+    </div>
+    <h3 id="t-kind">— —</h3>
+    <div class="row small"><span>Recibo:</span><span id="t-num">—</span></div>
+    <div class="row small"><span>Fecha-Hora:</span><span id="t-date">—</span></div>
+    <table>
+      <thead><tr><th>Cant.</th><th>Producto</th><th class="right">Sub.T</th></tr></thead>
+      <tbody id="t-body"></tbody>
+    </table>
+    <div class="row small total"><span>Total:</span><span id="t-total">S/ 0.00</span></div>
+    <div id="t-payRows" class="small"></div>
+    <div class="small" style="text-align:center;margin-top:2mm" id="t-footer">¡Gracias por su compra!</div>
+  </section>
+
+  <!-- Modal Cambio -->
+  <div class="modal" id="modalCambio">
+    <div class="box">
+      <button class="btn-x" aria-label="Cerrar" data-close>&times;</button>
+      <h3><i class="fa-solid fa-right-left"></i> Cambio de productos</h3>
+      <div class="body">
+        <div>
+          <div class="search">
+            <input id="cq" placeholder="Buscar producto…">
+            <button class="btn" id="cClear"><i class="fa-solid fa-broom"></i></button>
+          </div>
+          <div id="cGrid" class="products"></div>
+        </div>
+        <div>
+          <div class="miniList" id="cMini"></div>
+          <div class="sum">
+            <div class="row"><span>Original</span><b id="cOld">S/ 0.00</b></div>
+            <div class="row"><span>Nuevo</span><b id="cNew">S/ 0.00</b></div>
+            <div class="row tot"><span>Diferencia</span><b id="cDiff">S/ 0.00</b></div>
+          </div>
+
+          <!-- Tipo de cambio -->
+          <div class="mode-box" id="cModeBox">
+            <label class="muted"><i class="fa-solid fa-sliders"></i> Tipo de cambio:</label>
+            <label class="radio-pill"><input type="radio" name="cMode" value="diff" checked> Solo diferencia</label>
+            <label class="radio-pill"><input type="radio" name="cMode" value="full"> Rehacer pago completo</label>
+          </div>
+
+          <!-- Pago -->
+          <div class="actions" id="cPayBox" style="margin-top:8px;display:none;gap:8px;align-items:center;flex-wrap:wrap">
+            <label class="muted" id="cPayLabel"><i class="fa-solid fa-wallet"></i> Método para la diferencia:</label>
+            <select id="cMethod" class="pill" style="background:#0f1218;color:#fff;border:1px solid var(--line)">
+              <option value="cash">Efectivo</option>
+              <option value="qr">Yape/Plin</option>
+              <option value="visa">Visa</option>
+              <option value="mastercard">MasterCard</option>
+            </select>
+          </div>
+
+          <div class="actions" style="margin-top:10px">
+            <button class="btn" data-close><i class="fa-solid fa-xmark"></i> Cancelar</button>
+            <button class="btn ok" id="cConfirm"><i class="fa-solid fa-check"></i> Guardar cambio e imprimir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toaster" class="toaster"></div>
+
+  <script type="module">
+  /* ========= Firebase ========= */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, onSnapshot,
+           serverTimestamp, query, where, Timestamp, runTransaction, orderBy } 
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAqP22yZtwqrhu40hpL4n8gf02dsf74NLY",
+    authDomain: "lindero-grill-pos.firebaseapp.com",
+    projectId: "lindero-grill-pos",
+    storageBucket: "lindero-grill-pos.firebasestorage.app",
+    messagingSenderId: "611892354863",
+    appId: "1:611892354863:web:27512bb7b7551244090bda"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  getStorage(app);
+
+  /* ========= Utils ========= */
+  const $ = s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+  const fmt = n=>'S/ '+Number(n||0).toFixed(2);
+  function ymd(d){
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off*60*1000);
+    return local.toISOString().slice(0,10);
+  }
+  function toast(msg, kind='ok'){
+    const box = document.getElementById('toaster');
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `<i class="fa-solid ${kind==='ok'?'fa-circle-check':kind==='danger'?'fa-circle-xmark':'fa-circle-exclamation'}"></i> <div>${msg}</div>`;
+    box.appendChild(el);
+    setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-6px)'; setTimeout(()=>el.remove(),200); }, 2200);
+  }
+
+  function methodLabel(m){
+    const map = { cash:'Efectivo', qr:'Yape/Plin', visa:'Visa', mastercard:'MasterCard' };
+    return map[m] || (m ? String(m) : '—');
+  }
+  function methodIcon(m){
+    const map = {
+      cash: '<i class="fa-solid fa-money-bill-wave"></i>',
+      qr: '<i class="fa-solid fa-qrcode"></i>',
+      visa: '<i class="fa-brands fa-cc-visa"></i>',
+      mastercard: '<i class="fa-brands fa-cc-mastercard"></i>'
+    };
+    return map[m] || '<i class="fa-solid fa-wallet"></i>';
+  }
+
+  await new Promise(res=>onAuthStateChanged(auth,u=>u?res():signInAnonymously(auth)));
+
+  const TICKET_LOGO_URL = 'static/logo-ticket.png';
+  const BUSINESS_NAME   = "Lindero Grill";
+  const BUSINESS_TAGLINE= "El lugar del auténtico sabor";
+
+  /* ========= Productos para “Cambio” ========= */
+  let PRODUCTS = [];
+  async function loadProducts(){
+    const snap = await getDocs(query(collection(db,'products'), orderBy('name')));
+    PRODUCTS = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  }
+  await loadProducts();
+
+  function dayRange(dateObj){
+    const s=new Date(dateObj.getFullYear(),dateObj.getMonth(),dateObj.getDate(),0,0,0,0);
+    const e=new Date(dateObj.getFullYear(),dateObj.getMonth(),dateObj.getDate(),23,59,59,999);
+    return {start:Timestamp.fromDate(s),end:Timestamp.fromDate(e)};
+  }
+  const {start,end} = dayRange(new Date());
+
+  /* ========= Estado ========= */
+  let ALL = []; // { sale, order }
+  const listBox = document.getElementById('list');
+  const errBox  = document.getElementById('errBox');
+
+  function indexRowText(o){
+    const itemsTxt = (o.sale?.items||o.order?.items||[]).map(it=>it.name).join(' ');
+    const payTxt   = (o.sale?.payments||[]).map(p=>p.method).join(' ');
+    return `${o.sale?.receiptNo||''} ${o.order?.mode||''} ${itemsTxt} ${payTxt}`.toLowerCase();
+  }
+
+  /* ========= Cargar ventas HOY (en vivo) ========= */
+  const qy = query(
+    collection(db,'sales'),
+    where('createdAt','>=', start),
+    where('createdAt','<=', end),
+    orderBy('createdAt','desc')
+  );
+
+  onSnapshot(
+    qy,
+    async (snap)=>{
+      errBox.innerHTML = '';
+      const rows = await Promise.all(snap.docs.map(async d=>{
+        const s = d.data();
+        let order = null;
+        if(s.orderId){
+          const os = await getDoc(doc(db,'orders', s.orderId));
+          if(os.exists()) order = {id:os.id, ...os.data()};
+        }
+        return { sale:{id:d.id,...s}, order };
+      }));
+      ALL = rows;
+      renderList();
+      updateResume();
+    },
+    (err)=>{
+      console.error(err);
+      errBox.innerHTML = `<div class="err"><b>No se pudo cargar ventas.</b><br>${err.message||err}</div>`;
+    }
+  );
+
+  function sumPaymentsByType(type){
+    return ALL.filter(r=>r.sale.type===type)
+              .reduce((a,b)=>a + (Number(b.sale.payments?.[0]?.amount||0)), 0);
+  }
+  function updateResume(){
+    const sold   = ALL.filter(r=>!r.sale.type || r.sale.type==='normal')
+                      .reduce((a,b)=>a + (Number(b.sale.totals?.total||0)), 0);
+    const refunds = ALL.filter(r=>r.sale.type==='refund')
+                       .reduce((a,b)=>a + (Number(b.sale.totals?.total||0)), 0);
+    const changes = sumPaymentsByType('exchange'); // ±
+    const net = sold + refunds + changes;
+    document.getElementById('resume').innerHTML =
+      `<i class="fa-solid fa-calendar-day"></i> Hoy: 
+       <i class="fa-solid fa-sack-dollar"></i> Vendido ${fmt(sold)} • 
+       <i class="fa-solid fa-arrow-rotate-left"></i> Reembolsos ${fmt(refunds)} • 
+       <i class="fa-solid fa-right-left"></i> Diferencias ${fmt(changes)} • 
+       <i class="fa-solid fa-scale-balanced"></i> Neto ${fmt(net)}`;
+  }
+
+  /* ========= Render ========= */
+  function renderList(){
+    const q = (document.getElementById('q').value||'').toLowerCase().trim();
+    const rows = q ? ALL.filter(o=>indexRowText(o).includes(q)) : ALL;
+
+    if(!rows.length){
+      listBox.innerHTML = '<div class="empty"><i class="fa-solid fa-binoculars"></i> Sin ventas hoy.</div>';
+      return;
+    }
+
+    listBox.innerHTML = rows.map(r=>{
+      const s = r.sale, o = r.order||{};
+      const dt = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+      const pay = (s.payments?.[0]?.method||'');
+      const payAmt = Number(s.payments?.[0]?.amount||0);
+      const mode = (o.mode||'').toUpperCase();
+      const baseItems = (s.items?.length ? s.items : (o.items||[]));
+      const items = baseItems.map(it=>
+        `<div class="row"><span>${it.qty} × ${it.name}</span><span>${fmt((it.qty||0)*(it.price||0))}</span></div>`
+      ).join('') || '<div class="muted">—</div>';
+      const typeChip = s.type==='refund' ? '<span class="chip danger"><i class="fa-solid fa-arrow-rotate-left"></i> Reembolso</span>' :
+                      s.type==='exchange' ? '<span class="chip warn"><i class="fa-solid fa-right-left"></i> Cambio</span>' :
+                      '<span class="chip ok"><i class="fa-solid fa-file-invoice-dollar"></i> Venta</span>';
+
+      return `
+      <div class="card sale" data-id="${s.id}">
+        <div class="meta">
+          <div><b>Recibo</b>: <span class="hl">${s.receiptNo||'—'}</span></div>
+          <div class="muted"><i class="fa-regular fa-clock"></i> ${dt.toLocaleDateString()} ${dt.toLocaleTimeString().slice(0,8)}</div>
+          <div><i class="fa-solid fa-store"></i> Modo: <b>${mode||'—'}</b></div>
+          <div><span>${methodIcon(pay)} Pago:</span> <b>${(pay||'—').toUpperCase()}</b> <span class="muted">(${fmt(payAmt)})</span></div>
+          <div style="margin-top:6px">${typeChip}</div>
+        </div>
+        <div>
+          <div class="items">${items}</div>
+          <div class="row" style="margin-top:6px"><span class="muted">Total</span><b class="tot">${fmt(s.totals?.total||0)}</b></div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-print="${s.id}"><i class="fa-solid fa-receipt"></i> Imprimir baucher</button>
+          ${s.type==='refund' ? '' : '<button class="btn warn" data-cambio="'+s.id+'"><i class="fa-solid fa-right-left"></i> Cambio</button>'}
+          ${s.type==='refund' ? '' : '<button class="btn danger" data-refund="'+s.id+'"><i class="fa-solid fa-arrow-rotate-left"></i> Retirar pedido</button>'}
+        </div>
+      </div>`;
+    }).join('');
+
+    listBox.querySelectorAll('[data-print]').forEach(b=>b.onclick = ()=>printVoucher(b.dataset.print));
+    listBox.querySelectorAll('[data-refund]').forEach(b=>b.onclick = ()=>refundSale(b.dataset.refund));
+    listBox.querySelectorAll('[data-cambio]').forEach(b=>b.onclick = ()=>openCambio(b.dataset.cambio));
+  }
+
+  document.getElementById('q').addEventListener('input', renderList);
+  document.getElementById('clearQ').onclick = ()=>{ document.getElementById('q').value=''; renderList(); };
+
+  /* ========= Stock ========= */
+  async function adjustStock(items){
+    const updates = items.map(it=>runTransaction(db, async (tx)=>{
+      const pRef = doc(db,'products', it.productId || it.id);
+      const snap = await tx.get(pRef);
+      if(!snap.exists()) return;
+      const cur = Number(snap.data().stock||0);
+      const next = Math.max(0, cur - Number(it.qty||0));
+      tx.update(pRef, { stock: next, updatedAt: serverTimestamp() });
+    }));
+    await Promise.all(updates);
+  }
+  async function restock(items){
+    const updates = items.map(it=>runTransaction(db, async (tx)=>{
+      const pRef = doc(db,'products', it.productId || it.id);
+      const snap = await tx.get(pRef);
+      if(!snap.exists()) return;
+      const cur = Number(snap.data().stock||0);
+      const next = cur + Number(it.qty||0);
+      tx.update(pRef, { stock: next, updatedAt: serverTimestamp() });
+    }));
+    await Promise.all(updates);
+  }
+
+  async function nextSaleNo(){
+    return await runTransaction(db, async (tx)=>{
+      const id = ymd(new Date());
+      const ref = doc(db,'counters','sales');
+      const snap = await tx.get(ref);
+      let current = 0;
+      if(!snap.exists()){ tx.set(ref,{day:id,current:1}); current=1; }
+      else{
+        const d=snap.data();
+        if(d.day!==id){ current=1; tx.update(ref,{day:id,current:1}); }
+        else{ current=(d.current||0)+1; tx.update(ref,{current}); }
+      }
+      return String(current).padStart(4,'0');
+    });
+  }
+
+  /* ========= Ticket (impresión) ========= */
+  function renderTicket(items, label, total, num, pay){
+    document.getElementById('t-logo-img').src = TICKET_LOGO_URL;
+    document.getElementById('t-brand').textContent = BUSINESS_NAME;
+    document.getElementById('t-tagline').textContent = '"'+BUSINESS_TAGLINE+'"';
+    document.getElementById('t-kind').textContent = label || '—';
+    document.getElementById('t-num').textContent  = num || '—';
+    document.getElementById('t-date').textContent = new Date().toLocaleString();
+
+    const rows = (items||[]).map(it=>`
+      <tr>
+        <td>${it.qty}</td>
+        <td>${it.name}</td>
+        <td class="right">${fmt((it.qty||0)*(it.price||0))}</td>
+      </tr>`).join('');
+    document.getElementById('t-body').innerHTML = rows || '<tr><td colspan="3">—</td></tr>';
+
+    document.getElementById('t-total').textContent = fmt(total||0);
+
+    let payHtml = '';
+    if (Array.isArray(pay) && pay.length){
+      payHtml = pay.map(p => `<div class="row"><span>${methodLabel(p.method)}:</span><span>${fmt(p.amount ?? total)}</span></div>`).join('');
+    } else if (pay && typeof pay === 'object' && pay.method){
+      payHtml = `<div class="row"><span>${methodLabel(pay.method)}:</span><span>${fmt(total||0)}</span></div>`;
+    } else if (typeof pay === 'string'){
+      payHtml = `<div class="row"><span>${methodLabel(pay)}:</span><span>${fmt(total||0)}</span></div>`;
+    } else {
+      payHtml = '';
+    }
+    document.getElementById('t-payRows').innerHTML = payHtml;
+
+    document.getElementById('ticket').classList.add('show');
+  }
+  function printAfterPaint(){
+    return new Promise(resolve=>{
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); resolve(); }); });
+    });
+  }
+  window.addEventListener('afterprint', ()=> document.getElementById('ticket').classList.remove('show'));
+
+  async function printVoucher(saleId){
+    const row = ALL.find(x=>x.sale.id===saleId);
+    if(!row) return;
+    const items = (row.sale.items && row.sale.items.length) ? row.sale.items : (row.order?.items || []);
+    const label = (row.order?.mode||'').toUpperCase() || 'VENTA';
+    const total = row.sale?.totals?.total || 0;
+    const num   = row.sale?.receiptNo || '—';
+    const pays  = row.sale?.payments || null;
+    renderTicket(items, label, total, num, pays);
+    await printAfterPaint();
+  }
+
+  /* ========= Reembolso total ========= */
+  let _busyRefund = false;
+  async function refundSale(saleId){
+    if(_busyRefund) return; _busyRefund = true;
+    try{
+      if(ALL.some(r=>r.sale.type==='refund' && r.sale.refundOf===saleId)){
+        toast('Esta venta ya fue reembolsada.', 'danger'); return;
+      }
+      const row = ALL.find(x=>x.sale.id===saleId);
+      if(!row) return;
+      const s = row.sale, o = row.order;
+      if(!o){ toast('No se encontró el pedido.', 'danger'); return; }
+      if(s.type==='refund'){ toast('Ya es un reembolso.', 'danger'); return; }
+
+      const oldItems = (o.items||[]);
+      if(oldItems.length){ await restock(oldItems); }
+      await updateDoc(doc(db,'orders',o.id), { status:'reembolsado', updatedAt:serverTimestamp() });
+
+      const neg = Number(s.totals?.total||0) * -1;
+      const receiptNo = await nextSaleNo();
+      await addDoc(collection(db,'sales'),{
+        type:'refund',
+        refundOf: s.id,
+        orderId: o.id,
+        receiptNo,
+        totals: { subtotal: neg, igv: 0, total: neg },
+        payments: [{ method: (s.payments?.[0]?.method||'cash'), amount: neg }],
+        createdAt: serverTimestamp()
+      });
+
+      toast('Reembolso realizado.');
+    }catch(e){
+      console.error(e); toast('Error al reembolsar: '+(e.message||e),'danger');
+    }finally{
+      _busyRefund = false;
+    }
+  }
+
+  /* ========= Cambio ========= */
+  const modalCambio = document.getElementById('modalCambio');
+  const cGrid = document.getElementById('cGrid'), cMini=document.getElementById('cMini');
+  const cOld=document.getElementById('cOld'), cNew=document.getElementById('cNew'), cDiff=document.getElementById('cDiff'), cMethod=document.getElementById('cMethod');
+  const cPayBox = document.getElementById('cPayBox'), cPayLabel = document.getElementById('cPayLabel');
+
+  document.getElementById('cq').addEventListener('input', renderProducts);
+  document.getElementById('cClear').onclick = ()=>{ document.getElementById('cq').value=''; renderProducts(); };
+  modalCambio.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')||e.target===modalCambio) modalCambio.classList.remove('show'); });
+
+  let C_ROW=null;      // venta original seleccionada
+  let C_CART={};       // carrito nuevo (editable)
+  let C_MODE='diff';   // 'diff' | 'full'
+
+  function totalOf(items){ return (items||[]).reduce((a,b)=>a+(Number(b.qty||0)*Number(b.price||0)),0); }
+
+  function cloneItemsForCart(items){
+    const out={};
+    (items||[]).forEach(it=>{
+      const pid = it.productId || it.id || it.sku || it.name;
+      out[pid] = {
+        id: pid,
+        productId: pid,
+        name: it.name,
+        price: Number(it.price||0),
+        qty: Number(it.qty||0)
+      };
+    });
+    return out;
+  }
+
+  function openCambio(saleId){
+    const row = ALL.find(x=>x.sale.id===saleId);
+    if(!row || !row.order) { toast('No se encontró la venta','danger'); return; }
+    C_ROW = row;
+
+    // Precargamos el carrito con lo ORIGINAL (para poder quitar/agregar)
+    const originalItems = (row.sale.items?.length ? row.sale.items : (row.order.items||[]));
+    C_CART = cloneItemsForCart(originalItems);
+
+    // Reset modo & UI
+    C_MODE = 'diff';
+    $$('input[name="cMode"]').forEach(r=>r.checked = (r.value==='diff'));
+    cPayBoxToggle(); // con la diferencia actual
+    renderProducts(); renderMini();
+    cOld.textContent = fmt(row.sale?.totals?.total||0);
+
+    modalCambio.classList.add('show');
+  }
+
+  // Radio modo
+  $$('input[name="cMode"]').forEach(r=>{
+    r.onchange = ()=>{
+      if(r.checked){ C_MODE = r.value; renderMini(); } // recalcula visibilidad de pago
+    };
+  });
+
+  function renderProducts(){
+    const t = (document.getElementById('cq').value||'').toLowerCase().trim();
+    const list = t ? PRODUCTS.filter(p=>(p.name||'').toLowerCase().includes(t)) : PRODUCTS;
+    cGrid.innerHTML = list.map(p=>`
+      <div class="cardp">
+        <div><b>${p.name}</b><div class="muted">${fmt(p.price)}</div></div>
+        <button class="btn primary" data-add="${p.id}"><i class="fa-solid fa-plus"></i></button>
+      </div>`).join('');
+    cGrid.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{
+      const p = PRODUCTS.find(x=>x.id===b.dataset.add); if(!p) return;
+      if(!C_CART[p.id]) C_CART[p.id]={id:p.id, productId:p.id, name:p.name, price:Number(p.price||0), qty:0};
+      C_CART[p.id].qty++;
+      renderMini();
+    });
+  }
+
+  function renderMini(){
+    const items = Object.values(C_CART);
+    cMini.innerHTML = items.length ? items.map(it=>`
+      <div class="miniItem">
+        <div><b>${it.name}</b><br><span class="muted">${fmt(it.price)}</span></div>
+        <div class="qty"><button data-op="-" data-id="${it.id}">-</button><span>${it.qty}</span><button data-op="+" data-id="${it.id}">+</button></div>
+        <button class="btn danger" data-op="x" data-id="${it.id}"><i class="fa-solid fa-xmark"></i></button>
+      </div>`).join('') : '<div class="muted">Agrega productos →</div>';
+
+    cMini.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const it = C_CART[b.dataset.id]; if(!it) return;
+      if(b.dataset.op==='+') it.qty++;
+      if(b.dataset.op==='-') { it.qty--; if(it.qty<=0) delete C_CART[b.dataset.id]; }
+      if(b.dataset.op==='x') delete C_CART[b.dataset.id];
+      renderMini();
+    });
+
+    const oldTot = Number(C_ROW?.sale?.totals?.total||0);
+    const newTot = totalOf(items);
+    const diff   = newTot - oldTot;
+    cOld.textContent = fmt(oldTot);
+    cNew.textContent = fmt(newTot);
+    cDiff.textContent= fmt(diff);
+    cPayBoxToggle(diff);
+  }
+
+  function cPayBoxToggle(diff=0){
+    const show = (C_MODE==='full') || (diff!==0);
+    cPayBox.style.display = show ? 'flex' : 'none';
+    cPayLabel.textContent = C_MODE==='full' ? 'Método de pago (total):' : 'Método para la diferencia:';
+  }
+
+  let _busyChange=false;
+  document.getElementById('cConfirm').onclick = async ()=>{
+    if(_busyChange) return; _busyChange=true;
+    try{
+      const itemsNew = Object.values(C_CART).filter(it=>it.qty>0);
+      if(!itemsNew.length){ toast('Agrega productos para el cambio','danger'); return; }
+      const row = C_ROW; if(!row) return;
+
+      // 1) stock: devolver lo anterior y descontar lo nuevo
+      const oldItems = (row.order?.items||[]);
+      if(oldItems.length) await restock(oldItems);
+      await adjustStock(itemsNew);
+
+      // 2) actualizar la orden
+      const newTot = totalOf(itemsNew);
+      if(row.order?.id){
+        await updateDoc(doc(db,'orders', row.order.id), {
+          items: itemsNew,
+          subtotal: newTot, igv: 0, total: newTot,
+          status: 'cambiado',
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      const oldTot = Number(row.sale?.totals?.total||0);
+      const diff   = newTot - oldTot;
+      const payMethod = document.getElementById('cMethod').value;
+
+      if(C_MODE==='diff'){
+        // 3A) Solo diferencia => un "exchange" con snapshot del nuevo ticket y payment=diff (si != 0)
+        const receiptNo = await nextSaleNo();
+        await addDoc(collection(db,'sales'),{
+          type:'exchange',
+          exchangeOf: row.sale.id,
+          orderId: row.order?.id || null,
+          receiptNo,
+          totals: { subtotal: newTot, igv: 0, total: newTot },
+          payments: diff===0 ? [] : [{ method: payMethod, amount: diff }],
+          items: itemsNew,
+          createdAt: serverTimestamp()
+        });
+
+        // imprimir
+        const pays = diff===0 ? [] : [{ method: payMethod, amount: diff }];
+        renderTicket(itemsNew, (row.order?.mode||'').toUpperCase() || 'VENTA', newTot, receiptNo, pays);
+        await printAfterPaint();
+        toast('Cambio guardado (solo diferencia).');
+
+      }else{
+        // 3B) Rehacer pago completo:
+        // 3B-1) Refund total del ticket anterior
+        const refundNo = await nextSaleNo();
+        const oldMethod = (row.sale?.payments?.[0]?.method || 'cash');
+        await addDoc(collection(db,'sales'),{
+          type:'refund',
+          refundOf: row.sale.id,
+          orderId: row.order?.id || null,
+          receiptNo: refundNo,
+          totals: { subtotal: -oldTot, igv: 0, total: -oldTot },
+          payments: [{ method: oldMethod, amount: -oldTot }],
+          createdAt: serverTimestamp()
+        });
+
+        // 3B-2) Nueva venta normal por el total nuevo
+        const newNo = await nextSaleNo();
+        await addDoc(collection(db,'sales'),{
+          type:'normal', // o puedes omitir "type"
+          orderId: row.order?.id || null,
+          receiptNo: newNo,
+          totals: { subtotal: newTot, igv: 0, total: newTot },
+          payments: [{ method: payMethod, amount: newTot }],
+          items: itemsNew,
+          createdAt: serverTimestamp()
+        });
+
+        // imprimir el nuevo baucher (total con método nuevo)
+        renderTicket(itemsNew, (row.order?.mode||'').toUpperCase() || 'VENTA', newTot, newNo, [{method:payMethod, amount:newTot}]);
+        await printAfterPaint();
+        toast('Cambio guardado (pago completo rehecho).');
+      }
+
+      modalCambio.classList.remove('show');
+    }catch(e){
+      console.error(e); toast('Error guardando cambio: '+(e.message||e), 'danger');
+    }finally{
+      _busyChange=false;
+    }
+  };
+
+  /* ========= Cierre modal ========= */
+  document.addEventListener('click', (e)=>{
+    const closeBtn = e.target.closest('[data-close]');
+    if(closeBtn){ closeBtn.closest('.modal')?.classList.remove('show'); }
+  });
+
+  </script>
+</body>
+</html>

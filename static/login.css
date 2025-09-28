@@ -1,0 +1,103 @@
+/* ===== Base oscuro + acentos naranja ===== */
+*{ box-sizing:border-box }
+:root{
+  --bg:#0e0f12;        /* fondo */
+  --panel:#121318;     /* tarjeta */
+  --soft:#1a1c22;      /* hover */
+  --text:#e9ecf2;
+  --muted:#9aa3b5;
+  --line:rgba(255,255,255,.06);
+  --accent:#ff7a00;    /* naranja */
+  --accent-2:#ffb347;  /* naranja claro */
+}
+html,body{ height:100% }
+body{
+  margin:0; color:var(--text);
+  background: radial-gradient(1000px 600px at 70% -5%, #1b1e26 0, transparent 60%), var(--bg);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ===== Layout ===== */
+.wrap{ min-height:100dvh; display:grid; place-items:center; padding:22px }
+.card{
+  width:min(460px, 94vw);
+  background:var(--panel); border:1px solid var(--line); border-radius:20px;
+  padding:22px; box-shadow:0 18px 50px rgba(0,0,0,.35);
+  animation: rise .6s ease both;
+}
+@keyframes rise{ from{ transform:translateY(12px); opacity:0 } to{ transform:none; opacity:1 } }
+
+/* ===== Marca ===== */
+.brand{ display:flex; align-items:center; gap:12px; margin-bottom:8px }
+.logo{
+  width:56px; height:56px; border-radius:14px; display:none; place-items:center;
+  background:#1d0f06; color:#ffd9b3; font-size:26px; border:1px solid var(--line);
+  box-shadow: inset 0 0 24px rgba(255,122,0,.25), 0 10px 26px rgba(255,122,0,.24)
+}
+.logo-img{
+  width:56px; height:56px; object-fit:cover; border-radius:14px;
+  border:1px solid var(--line); background:#111; box-shadow:0 10px 24px rgba(0,0,0,.25)
+}
+.title{ margin:0; font-size:1.6rem }
+.title b{ color:var(--accent) }
+.muted{ color:var(--muted) }
+
+/* ===== Dots del PIN ===== */
+.dots{ display:flex; gap:12px; justify-content:center; margin:14px 0 8px }
+.dots span{
+  width:14px; height:14px; border-radius:999px; border:2px solid #2a3347;
+  background:transparent; transition: all .22s ease;
+}
+.dots span.fill{
+  background: radial-gradient(70% 70% at 30% 30%, var(--accent-2), var(--accent));
+  border-color: transparent; transform: scale(1.05); box-shadow: 0 0 10px rgba(255,122,0,.35)
+}
+.msg{ height:1.2rem; text-align:center; color:#ffd6d6 }
+
+/* ===== Teclado ===== */
+.pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px }
+.pad button{
+  padding:16px 0; border-radius:14px; border:1px solid var(--line);
+  background:#151821; color:#ecf2ff; font-size:1.15rem; font-weight:700; letter-spacing:.3px;
+  cursor:pointer; transition:.15s transform, .2s box-shadow, .2s background
+}
+.pad button:hover{ background:#1b1f29; box-shadow:0 12px 22px rgba(0,0,0,.25) }
+.pad button:active{ transform:scale(.985) }
+.pad button:focus-visible{ outline:3px solid rgba(255,122,0,.35) }
+.pad button.primary{
+  border:none; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#231106;
+  box-shadow:0 12px 26px rgba(255,122,0,.35)
+}
+.pad button.ghost{ background:#14171f }
+
+/* ===== Overlay de carga (ring + barra) ===== */
+.overlay{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.5); backdrop-filter: blur(2px); z-index:10 }
+.overlay.show{ display:grid }
+.loader{ width:min(360px,92vw); text-align:center; background:#121318; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 16px 40px rgba(0,0,0,.45) }
+.loader p{ margin:10px 0 2px; color:#cfd5e2 }
+
+/* ring */
+.ring{ display:grid; place-items:center; margin:8px auto 12px; width:56px; height:56px }
+.ring span{
+  width:100%; height:100%; border-radius:50%;
+  border:4px solid rgba(255,255,255,.12);
+  border-right-color:var(--accent); border-top-color:var(--accent-2);
+  animation:spin .8s linear infinite
+}
+@keyframes spin{ to{ transform:rotate(360deg) } }
+
+/* bar */
+.loader .bar{ height:10px; background:#0c0f16; border:1px solid var(--line); border-radius:999px; overflow:hidden }
+.loader .bar i{ display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-2)); animation:fill 1.6s ease-in-out infinite }
+@keyframes fill{ 0%{width:0;transform:translateX(-10%)} 50%{width:70%;transform:translateX(10%)} 100%{width:100%;transform:translateX(0)} }
+
+/* ===== WhatsApp flotante ===== */
+.wa-float{
+  position:fixed; left:16px; bottom:20px; z-index:20;
+  display:flex; align-items:center; gap:10px; text-decoration:none;
+  color:#eafff2; background:#111; border:1px solid var(--line); border-radius:16px; padding:10px 12px;
+  backdrop-filter:blur(6px); opacity:.9; transition:.2s transform, .2s box-shadow, .2s opacity
+}
+.wa-float i{ color:#25d366; font-size:20px }
+.wa-float:hover{ transform:translateY(-2px); opacity:1; box-shadow:0 12px 24px rgba(0,0,0,.35) }
+@media (max-width:560px){ .wa-float span{ display:none } }

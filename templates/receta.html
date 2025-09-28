@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Lindero Grill • Recetario</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<style>
+  :root{
+    --bg:#0e0f12; --surface:#121318; --soft:#1a1c22; --line:rgba(255,255,255,.08);
+    --text:#ecf0f8; --muted:#a7b0c2;
+    --accent:#ff7a00; --accent2:#ffb347;
+    --ok:#22c55e; --warn:#f59e0b; --info:#3b82f6; --danger:#ef4444;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  img{max-width:100%;display:block}
+  .muted{opacity:.78}
+
+  .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(14,15,18,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .brand{font-weight:900}.brand b{color:var(--accent)}
+  .pill{border:1px solid var(--line);background:#17191f;border-radius:999px;padding:8px 12px;color:#dfe7f3;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+  .pill.btn{cursor:pointer}
+  .pill.icon{width:38px;height:38px;display:grid;place-items:center;border-radius:999px}
+  .pill.icon.info{background:linear-gradient(135deg,var(--info),#7aa8ff);color:#06122b;border:none;font-weight:800}
+  .pill.icon.safe{background:linear-gradient(135deg,#ffd166,#ff7a00);color:#2b1506;border:none;font-weight:800}
+
+  .wrap{max-width:1200px;margin:16px auto;padding:0 16px}
+  .section{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+  .section h3{margin:0 0 8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .input{display:flex;align-items:center;gap:8px;background:#0f1218;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:#fff}
+  .input input{background:transparent;border:0;outline:0;color:#fff;min-width:0}
+  .input small{opacity:.85}
+
+  .grid{display:grid;gap:10px}
+  @media(min-width:840px){ .grid.cols-2{grid-template-columns:1fr 1fr} }
+  @media(min-width:1100px){ .grid.cols-3{grid-template-columns:1fr 1fr 1fr} }
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{opacity:.8}
+
+  .btn{border-radius:12px;padding:10px 12px;border:1px solid var(--line);cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:#131722;color:#fff}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#261106;border:none;font-weight:800}
+  .btn.ok{background:linear-gradient(135deg,var(--ok),#a7efb1);color:#06260e;border:none;font-weight:800}
+  .btn.warn{background:#1f2a3d;color:#d9e7ff;border-color:#2a3347}
+  .btn.danger{background:#2a1618;color:#ffd6d6;border-color:#3a2325}
+  .btn.ghost{background:#0f1218;border-color:#1f2533}
+  .right{margin-left:auto}
+  .hint{font-size:.92rem;opacity:.85}
+
+  .toaster{position:fixed;top:14px;right:14px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+  .toast{background:#121420;border:1px solid var(--line);color:#fff;padding:10px 12px;border-radius:12px;min-width:260px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px}
+
+  /* Editor multi */
+  .rc-list{display:flex;flex-direction:column;gap:8px}
+  .rc-item{display:flex;gap:8px;align-items:center}
+  .rc-item .rc-del{background:#261419;border:1px solid #3a2227}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);padding:6px 8px;border-radius:999px;background:#0f1218;font-size:.86rem}
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">Lindero <b>Grill</b> — Recetario</div>
+    <div class="row">
+      <a class="pill btn" href="/panel"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+      <a class="pill btn icon info" href="/hoy" title="Ver detalle de hoy"><i class="fa-solid fa-circle-info"></i></a>
+      <a class="pill btn icon safe" href="/movimientos" title="Caja"><i class="fa-solid fa-vault"></i></a>
+      <a class="pill" href="/logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- STOCK GENERAL -->
+    <section class="section">
+      <h3><i class="fa-solid fa-kitchen-set"></i> Stock general de cocina (hoy)</h3>
+      <p class="muted">Pollo permite fracciones de 1/8. Bebidas ingrésalas en <b>litros</b> (se guardan en <b>ml</b>). Las <b>Gaseosas</b> se guardan por <b>unidades</b> por tamaño. Un único botón guarda todo.</p>
+
+      <div class="grid cols-2" id="baseGrid">
+        <!-- Pollo -->
+        <div class="section">
+          <h4 style="margin:0 0 8px"><i class="fa-solid fa-drumstick-bite"></i> Pollo</h4>
+          <div class="row">
+            <span class="input">
+              <i class="fa-solid fa-hashtag"></i>
+              <input id="pollo" type="number" step="0.125" min="0" placeholder="Pollo (ej: 10.5, 9.875)">
+            </span>
+            <button class="btn" data-add="0.125">+ 1/8</button>
+            <button class="btn" data-add="0.25">+ 1/4</button>
+            <button class="btn" data-add="0.5">+ 1/2</button>
+            <button class="btn warn" data-add="-0.125">− 1/8</button>
+            <span class="hint" id="polloHint">—</span>
+          </div>
+        </div>
+
+        <!-- Bebidas (L) -->
+        <div class="section">
+          <h4 style="margin:0 0 8px"><i class="fa-solid fa-wine-bottle"></i> Bebidas (Litros)</h4>
+          <div class="row">
+            <span class="input"><i class="fa-solid fa-beer-mug-empty"></i><input id="chichaL" type="number" step="0.1" min="0" placeholder="Chicha (L)"></span>
+            <span class="input"><i class="fa-solid fa-seedling"></i><input id="maracuyaL" type="number" step="0.1" min="0" placeholder="Maracuyá (L)"></span>
+            <span class="input"><i class="fa-solid fa-lemon"></i><input id="limonadaL" type="number" step="0.1" min="0" placeholder="Limonada (L)"></span>
+          </div>
+          <div class="hint" id="bebidasHint">—</div>
+        </div>
+
+        <!-- Gaseosas (UNIDADES por tamaño) -->
+        <div class="section" style="grid-column:1/-1">
+          <h4 style="margin:0 0 8px"><i class="fa-solid fa-bottle-water"></i> Gaseosas (unidades por tamaño)</h4>
+          <p class="muted" style="margin:6px 0 10px">
+            Se guardan como “buckets” de receta: <b>Gaseosa 500 ml</b>, <b>1 L</b>, <b>1.5 L</b>, <b>3 L</b>.  
+            Luego, en productos, puedes elegir uno de estos para que consuma <b>unidades</b> (ej: 1).
+          </p>
+
+          <div class="row" id="sodaGrid"></div>
+          <div class="hint" id="sodasHint">—</div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="reloadSodas"><i class="fa-solid fa-rotate"></i> Recargar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn ok" id="saveBase"><i class="fa-solid fa-floppy-disk"></i> Guardar stock del día</button>
+        <button class="btn" id="reloadBase"><i class="fa-solid fa-rotate"></i> Recargar</button>
+        <button class="btn primary right" id="downloadBoleta"><i class="fa-solid fa-file-arrow-down"></i> Descargar boleta del día</button>
+      </div>
+    </section>
+
+    <!-- ASOCIAR / INVENTARIO -->
+    <section class="section">
+      <h3><i class="fa-solid fa-link"></i> Asociar productos a ingredientes / gestionar stock</h3>
+      <p class="muted">
+        Modos: <span class="chip"><i class="fa-solid fa-sitemap"></i> Receta múltiple</span>,
+        <span class="chip"><i class="fa-solid fa-code-branch"></i> Receta simple</span>,
+        <span class="chip"><i class="fa-solid fa-box"></i> Unidad</span> o <span class="chip">Sin receta</span>.  
+        Ahora puedes seleccionar <b>Gaseosa 500 ml / 1 L / 1.5 L / 3 L</b> como ingrediente y definir <b>unidades</b> que consume (por defecto 1).
+      </p>
+
+      <div class="row" style="margin-bottom:8px">
+        <span class="input"><i class="fa-solid fa-magnifying-glass"></i><input id="q" placeholder="Buscar producto…"></span>
+        <select id="fIngr" class="pill">
+          <option value="">Todos los ingredientes</option>
+          <option value="chicken">Pollo</option>
+          <option value="chicha">Chicha</option>
+          <option value="maracuya">Maracuyá</option>
+          <option value="limonada">Limonada</option>
+          <option value="soda_500">Gaseosa 500 ml</option>
+          <option value="soda_1000">Gaseosa 1 L</option>
+          <option value="soda_1500">Gaseosa 1.5 L</option>
+          <option value="soda_3000">Gaseosa 3 L</option>
+          <option value="unidad">Unidad</option>
+          <option value="none">— Sin receta —</option>
+          <option value="multi">— Receta múltiple —</option>
+        </select>
+        <button class="btn" id="reloadProducts"><i class="fa-solid fa-rotate"></i> Recargar</button>
+        <button class="btn primary right" id="recalcAll"><i class="fa-solid fa-calculator"></i> Recalcular inventario derivado</button>
+      </div>
+
+      <div style="overflow:auto">
+        <table id="prodTable">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th style="width:220px">Modo</th>
+              <th style="width:520px">Valor / Componentes</th>
+              <th style="width:230px">Stock derivado (preview)</th>
+              <th style="width:180px">Acción</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="muted" style="margin-top:8px">
+      Tip: primero define stock base (pollo/bebidas) y gaseosas por tamaño; luego mapea los productos.  
+      “Unidad” se guarda directo en ese producto (no usa receta).
+    </p>
+  </main>
+
+  <div id="toaster" class="toaster"></div>
+
+  <!-- Firebase -->
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, writeBatch, query, orderBy, serverTimestamp, runTransaction } 
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // === Config iguales al panel ===
+  const firebaseConfig = {
+    apiKey: "AIzaSyAqP22yZtwqrhu40hpL4n8gf02dsf74NLY",
+    authDomain: "lindero-grill-pos.firebaseapp.com",
+    projectId: "lindero-grill-pos",
+    storageBucket: "lindero-grill-pos.firebasestorage.app",
+    messagingSenderId: "611892354863",
+    appId: "1:611892354863:web:27512bb7b7551244090bda"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  await new Promise(res=>onAuthStateChanged(auth,u=>u?res():signInAnonymously(auth)));
+
+  // ===== Helpers UI
+  const $ = s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+  const toast=(msg,type='ok')=>{
+    const box=$('#toaster'); const el=document.createElement('div');
+    el.className='toast'; el.innerHTML=`<i class="fa-solid ${type==='ok'?'fa-circle-check':type==='warn'?'fa-circle-exclamation':'fa-circle-xmark'}"></i><div>${msg}</div>`;
+    box.appendChild(el); setTimeout(()=>{ el.style.opacity=.0; setTimeout(()=>el.remove(),180);},1800);
+  };
+  const todayKey = ()=> new Date().toISOString().slice(0,10); // YYYY-MM-DD
+
+  // ===== Ingredientes base (derivados)
+  // kind:
+  //   - 'chicken' (pollo, fracciones 1/8)
+  //   - 'volume_ml' (ml)
+  //   - 'unit_bucket' (unidades, para gaseosas por tamaño)
+  const INGREDIENTS = [
+    {id:'chicken',   name:'Pollo',            kind:'chicken'},
+    {id:'chicha',    name:'Chicha',           kind:'volume_ml'},
+    {id:'maracuya',  name:'Maracuyá',         kind:'volume_ml'},
+    {id:'limonada',  name:'Limonada',         kind:'volume_ml'},
+    {id:'soda_500',  name:'Gaseosa 500 ml',   kind:'unit_bucket'},
+    {id:'soda_1000', name:'Gaseosa 1 L',      kind:'unit_bucket'},
+    {id:'soda_1500', name:'Gaseosa 1.5 L',    kind:'unit_bucket'},
+    {id:'soda_3000', name:'Gaseosa 3 L',      kind:'unit_bucket'},
+  ];
+  const ING_SELECT = `<option value="">— Seleccionar —</option>
+    <option value="chicken">Pollo</option>
+    <option value="chicha">Chicha</option>
+    <option value="maracuya">Maracuyá</option>
+    <option value="limonada">Limonada</option>
+    <option value="soda_500">Gaseosa 500 ml</option>
+    <option value="soda_1000">Gaseosa 1 L</option>
+    <option value="soda_1500">Gaseosa 1.5 L</option>
+    <option value="soda_3000">Gaseosa 3 L</option>`;
+
+  // ========= Helpers exactos
+  const toOctavos   = n => Math.round(Number(n||0) * 8);
+  const fromOctavos = e => (e / 8);
+
+  // ====== BASE pollo/bebidas
+  async function loadBase(){
+    const read = async(id)=> (await getDoc(doc(db,'recipes',id))).data() || {};
+    const pollo   = (await read('chicken')).stock || 0;
+    const chicha  = (await read('chicha')).stock  || 0;
+    const maracuy = (await read('maracuya')).stock|| 0;
+    const limon   = (await read('limonada')).stock|| 0;
+
+    $('#pollo').value     = Number(pollo).toFixed(3).replace(/\.000$/,'');
+    $('#chichaL').value   = chicha   ? (chicha/1000)   : '';
+    $('#maracuyaL').value = maracuy  ? (maracuy/1000) : '';
+    $('#limonadaL').value = limon    ? (limon/1000)   : '';
+
+    updateHints();
+  }
+  function updateHints(){
+    const p = Number($('#pollo').value||0);
+    $('#polloHint').textContent = `Equivale a ${Math.floor(p)} enteros + ${Math.round((p-Math.floor(p))*8)}/8`;
+    const cL = Number($('#chichaL').value||0), mL = Number($('#maracuyaL').value||0), lL = Number($('#limonadaL').value||0);
+    $('#bebidasHint').textContent = `Chicha: ${cL} L • Maracuyá: ${mL} L • Limonada: ${lL} L`;
+  }
+  $$('#baseGrid [data-add]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const cur = Number($('#pollo').value || 0);
+      const add = Number(b.dataset.add);
+      const next = Math.max(0, Math.round((cur+add)*1000)/1000);
+      $('#pollo').value = next.toString();
+      updateHints();
+    });
+  });
+  $('#pollo,#chichaL,#maracuyaL,#limonadaL').addEventListener('input', updateHints);
+
+  // ======= GASEOSAS por TAMAÑO (Unit buckets guardados en recipes)
+  const SODA_BUCKETS = [
+    {id:'soda_500',  label:'500 ml'},
+    {id:'soda_1000', label:'1 L'},
+    {id:'soda_1500', label:'1.5 L'},
+    {id:'soda_3000', label:'3 L'},
+  ];
+  let SODA_INPUTS = {}; // id -> input element
+  function renderSodaInputs(){
+    const grid = $('#sodaGrid');
+    grid.innerHTML = SODA_BUCKETS.map(s=>`
+      <span class="input" data-soda="${s.id}">
+        <i class="fa-solid fa-bottle-water"></i>
+        <input type="number" step="1" min="0" placeholder="Gaseosa ${s.label} (unid)">
+        <small>unid</small>
+      </span>
+    `).join('');
+    SODA_INPUTS = {};
+    grid.querySelectorAll('[data-soda]').forEach(w=>{
+      const id = w.dataset.soda;
+      SODA_INPUTS[id] = w.querySelector('input');
+      SODA_INPUTS[id].addEventListener('input', updateSodasHint);
+    });
+  }
+  async function hydrateSodasFromRecipes(){
+    for(const s of SODA_BUCKETS){
+      const snap = await getDoc(doc(db,'recipes', s.id));
+      const d = snap.exists() ? snap.data() : {};
+      SODA_INPUTS[s.id].value = (typeof d.stock === 'number') ? d.stock : '';
+    }
+    updateSodasHint();
+  }
+  function updateSodasHint(){
+    const parts = SODA_BUCKETS.map(s=>{
+      const v = Number(SODA_INPUTS[s.id]?.value||0);
+      return `${s.label}: ${isNaN(v)||v===0?'0':v} unid`;
+    });
+    $('#sodasHint').textContent = parts.join(' • ');
+  }
+
+  // ===== Productos / Recetas (incluye múltiple)
+  let PRODUCTS = [];
+  let RECIPES  = {};
+
+  async function loadProducts(){
+    const snap = await getDocs(query(collection(db,'products'), orderBy('name')));
+    PRODUCTS = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  }
+  async function loadRecipesToCache(){
+    RECIPES = {};
+    for (const ing of INGREDIENTS){
+      const d = (await getDoc(doc(db,'recipes',ing.id))).data() || {};
+      RECIPES[ing.id] = { stock: Number(d.stock||0), kind: d.kind || ing.kind };
+    }
+  }
+
+  function modeOf(p){
+    if(p.recipe?.ingredient==='unidad') return 'unidad';
+    if(p.recipe?.ingredient==='none')   return 'none';
+    if(Array.isArray(p.recipeList) && p.recipeList.length) return 'multi';
+    if(p.deriveFromRecipe && p.recipe?.ingredient && p.recipe.ingredient!=='none') return 'simple';
+    return 'none';
+  }
+
+  function computeServingsFromComponent(c){
+    const rec = RECIPES[c.ingredient]; if(!rec) return Infinity;
+    if(rec.kind==='chicken'){
+      const base8 = toOctavos(Number(rec.stock||0));
+      const per8  = toOctavos(Number(c.amount||0));
+      if(per8<=0) return Infinity;
+      return Math.floor(base8 / per8);
+    }else if(rec.kind==='volume_ml'){
+      const baseMl = Number(rec.stock||0);
+      const perMl  = Number(c.amount_ml||0);
+      if(perMl<=0) return Infinity;
+      return Math.floor(baseMl / perMl);
+    }else{ // unit_bucket
+      const baseU = Math.floor(Number(rec.stock||0));
+      const perU  = Math.max(1, Math.floor(Number(c.amount_units||0)||1));
+      return Math.floor(baseU / perU);
+    }
+  }
+
+  function computeDerivedStock(p){
+    const m = modeOf(p);
+    if(m==='unidad') return `${Number(p.stock||0)} unid (por producto)`;
+    if(m==='none')   return '—';
+
+    if(m==='simple'){
+      const r = p.recipe, rec = RECIPES[r.ingredient]; if(!rec) return '—';
+      if(rec.kind==='chicken'){
+        const base8 = toOctavos(Number(rec.stock||0));
+        const per8  = toOctavos(Number(r.amount||0));
+        if(per8<=0) return '—';
+        const s = Math.floor(base8 / per8);
+        return `${s} unid (base: ${Number(rec.stock||0).toFixed(3)} pollo)`;
+      }else if(rec.kind==='volume_ml'){
+        const baseMl = Number(rec.stock||0);
+        const perMl  = Number(r.amount_ml||0);
+        if(perMl<=0) return '—';
+        const s = Math.floor(baseMl / perMl);
+        return `${s} unid (base: ${(baseMl/1000).toFixed(2)} L)`;
+      }else{
+        const baseU = Math.floor(Number(rec.stock||0));
+        const perU  = Math.max(1, Math.floor(Number(r.amount_units||0)||1));
+        const s = Math.floor(baseU / perU);
+        const name = INGREDIENTS.find(x=>x.id===r.ingredient)?.name || 'Gaseosa';
+        return `${s} unid (base: ${baseU} ${name})`;
+      }
+    }
+
+    if(m==='multi'){
+      const list = Array.isArray(p.recipeList)? p.recipeList : [];
+      if(!list.length) return '—';
+      let s = Infinity;
+      for(const c of list) s = Math.min(s, computeServingsFromComponent(c));
+      if(!isFinite(s)) s=0;
+      return `${s} unid (mín. entre componentes)`;
+    }
+    return '—';
+  }
+
+  function ingredientKind(id){ return (INGREDIENTS.find(x=>x.id===id)?.kind) || 'chicken'; }
+
+  function renderProducts(){
+    const q = ($('#q').value||'').toLowerCase().trim();
+    const f = $('#fIngr').value;
+    const tbody = $('#prodTable tbody');
+
+    const filtered = PRODUCTS.filter(p=>{
+      const matchQ = !q || (p.name||'').toLowerCase().includes(q);
+      const m = modeOf(p);
+      const ingr = (p.recipe?.ingredient||'');
+      const matchF = !f ||
+        (f==='multi' && m==='multi') ||
+        (f==='unidad' && m==='unidad') ||
+        (f==='none' && m==='none') ||
+        (f && INGREDIENTS.some(x=>x.id===f) && ingr===f);
+      return matchQ && matchF;
+    });
+
+    tbody.innerHTML = filtered.map(p=>{
+      const m = modeOf(p);
+      const modeSel = `<select class="pill modeSel">
+        <option value="none" ${m==='none'?'selected':''}>Sin receta</option>
+        <option value="simple" ${m==='simple'?'selected':''}>Receta simple</option>
+        <option value="multi" ${m==='multi'?'selected':''}>Receta múltiple</option>
+        <option value="unidad" ${m==='unidad'?'selected':''}>Unidad (stock por producto)</option>
+      </select>`;
+
+      let valueHtml = '';
+      if(m==='unidad'){
+        valueHtml = `
+          <span class="input" style="width:240px">
+            <i class="fa-solid fa-box"></i>
+            <input class="unitStock" type="number" step="1" min="0" placeholder="Stock (unid)" value="${Number(p.stock??'')||''}">
+            <small>unid</small>
+          </span>`;
+      }else if(m==='simple'){
+        const ingr = p.recipe?.ingredient || 'chicken';
+        const kind = ingredientKind(ingr);
+        const value = (kind==='chicken') ? (p.recipe?.amount??'') :
+                      (kind==='volume_ml') ? (p.recipe?.amount_ml??'') :
+                      (p.recipe?.amount_units??'');
+        const step  = (kind==='chicken') ? '0.125' : '1';
+        const ph    = (kind==='chicken') ? 'ej: 0.125 (1/8)' :
+                      (kind==='volume_ml') ? 'ml por unidad (ej: 350)' :
+                      'unid por producto (ej: 1)';
+        const icon  = (kind==='chicken') ? 'fa-drumstick-bite' :
+                      (kind==='volume_ml') ? 'fa-wine-bottle' : 'fa-bottle-water';
+        const unit  = (kind==='chicken') ? 'pollo' :
+                      (kind==='volume_ml') ? 'ml' : 'unid';
+
+        valueHtml = `
+          <div class="row">
+            <select class="pill ingrSel">
+              ${ING_SELECT.replace(`value="${ingr}"`,`value="${ingr}" selected`)}
+            </select>
+            <span class="input" style="width:260px">
+              <i class="fa-solid ${icon}"></i>
+              <input class="amountInp" type="number" step="${step}" min="0" placeholder="${ph}" value="${value}">
+              <small>${unit}</small>
+            </span>
+          </div>`;
+      }else if(m==='multi'){
+        const list = Array.isArray(p.recipeList) ? p.recipeList : [];
+        const rows = list.map((c,i)=>{
+          const kind = ingredientKind(c.ingredient);
+          const value = (kind==='chicken') ? (c.amount??'') :
+                        (kind==='volume_ml') ? (c.amount_ml??'') :
+                        (c.amount_units??'');
+          const step  = (kind==='chicken') ? '0.125' : '1';
+          const ph    = (kind==='chicken') ? 'ej: 0.125 (1/8)' :
+                        (kind==='volume_ml') ? 'ml por unidad (ej: 350)' :
+                        'unid por producto (ej: 1)';
+          const icon  = (kind==='chicken') ? 'fa-drumstick-bite' :
+                        (kind==='volume_ml') ? 'fa-wine-bottle' : 'fa-bottle-water';
+          const unit  = (kind==='chicken') ? 'pollo' :
+                        (kind==='volume_ml') ? 'ml' : 'unid';
+
+          return `<div class="rc-item" data-idx="${i}">
+            <select class="pill rc-ing">
+              ${ING_SELECT.replace(`value="${c.ingredient}"`,`value="${c.ingredient}" selected`)}
+            </select>
+            <span class="input" style="width:240px">
+              <i class="fa-solid ${icon}"></i>
+              <input class="rc-val" type="number" step="${step}" min="0" placeholder="${ph}" value="${value}">
+              <small>${unit}</small>
+            </span>
+            <button class="btn rc-del"><i class="fa-solid fa-trash"></i></button>
+          </div>`;
+        }).join('');
+        valueHtml = `
+          <div class="rc-list">
+            ${rows || `<div class="muted">Sin componentes. Agrega abajo.</div>`}
+            <div>
+              <button class="btn rc-add"><i class="fa-solid fa-plus"></i> Agregar componente</button>
+            </div>
+          </div>`;
+      }else{
+        valueHtml = `<span class="muted">—</span>`;
+      }
+
+      return `<tr data-id="${p.id}">
+        <td>
+          <b>${p.name||'—'}</b>
+          <div class="muted" style="font-size:.9rem">Stock actual (p.stock): ${Number(p.stock||0)}</div>
+        </td>
+        <td>${modeSel}</td>
+        <td>${valueHtml}</td>
+        <td class="muted prev">${computeDerivedStock(p) || '—'}</td>
+        <td><button class="btn saveMap"><i class="fa-solid fa-floppy-disk"></i> Guardar</button></td>
+      </tr>`;
+    }).join('');
+
+    // === eventos por fila
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const id = tr.dataset.id;
+      const p  = PRODUCTS.find(x=>x.id===id);
+      const prev= tr.querySelector('.prev');
+      const modeSel = tr.querySelector('.modeSel');
+
+      const rerenderRow = ()=> renderProducts();
+
+      modeSel?.addEventListener('change', async ()=>{
+        const val = modeSel.value;
+        if(val==='unidad'){
+          await updateDoc(doc(db,'products',id), {
+            recipe: {ingredient:'unidad'}, deriveFromRecipe:false, uKind:'unit', updatedAt: serverTimestamp()
+          });
+          const i = PRODUCTS.findIndex(x=>x.id===id);
+          PRODUCTS[i] = {...PRODUCTS[i], recipe:{ingredient:'unidad'}, deriveFromRecipe:false, uKind:'unit'};
+          toast('Modo “Unidad” aplicado','ok'); rerenderRow(); return;
+        }
+        if(val==='none'){
+          await updateDoc(doc(db,'products',id), { recipe:{ingredient:'none'}, recipeList:[], deriveFromRecipe:false, updatedAt: serverTimestamp() });
+          const i = PRODUCTS.findIndex(x=>x.id===id);
+          PRODUCTS[i] = {...PRODUCTS[i], recipe:{ingredient:'none'}, recipeList:[], deriveFromRecipe:false};
+          toast('Modo “Sin receta” aplicado','ok'); rerenderRow(); return;
+        }
+        if(val==='simple'){
+          // sembrar con Pollo 1/8 o conservar
+          let payload = {ingredient:'chicken', amount:0.125, unit:'chicken'};
+          if(Array.isArray(p.recipeList) && p.recipeList.length){
+            const c = p.recipeList[0];
+            const k = ingredientKind(c.ingredient);
+            if(k==='chicken') payload={ingredient:c.ingredient, amount:Number(c.amount||0), unit:'chicken'};
+            else if(k==='volume_ml') payload={ingredient:c.ingredient, amount_ml:Number(c.amount_ml||0), unit:'ml'};
+            else payload={ingredient:c.ingredient, amount_units:Number(c.amount_units||0)||1, unit:'unit'};
+          }else if(p.recipe?.ingredient && p.recipe.ingredient!=='unidad' && p.recipe.ingredient!=='none'){
+            payload = {...p.recipe};
+            if(ingredientKind(payload.ingredient)==='unit_bucket' && !payload.amount_units) payload.amount_units=1;
+          }
+          await updateDoc(doc(db,'products',id), { recipe:payload, recipeList:[], deriveFromRecipe:true, updatedAt: serverTimestamp() });
+          const i = PRODUCTS.findIndex(x=>x.id===id);
+          PRODUCTS[i] = {...PRODUCTS[i], recipe:payload, recipeList:[], deriveFromRecipe:true};
+          toast('Modo “Receta simple” aplicado','ok'); rerenderRow(); return;
+        }
+        if(val==='multi'){
+          let list = [];
+          if(p.recipe?.ingredient && p.recipe.ingredient!=='unidad' && p.recipe.ingredient!=='none'){
+            const k = ingredientKind(p.recipe.ingredient);
+            if(k==='chicken') list=[{ingredient:p.recipe.ingredient, amount:Number(p.recipe.amount||0)}];
+            else if(k==='volume_ml') list=[{ingredient:p.recipe.ingredient, amount_ml:Number(p.recipe.amount_ml||0)}];
+            else list=[{ingredient:p.recipe.ingredient, amount_units:Number(p.recipe.amount_units||0)||1}];
+          }
+          await updateDoc(doc(db,'products',id), { recipeList:list, deriveFromRecipe:true, updatedAt: serverTimestamp() });
+          const i = PRODUCTS.findIndex(x=>x.id===id);
+          PRODUCTS[i] = {...PRODUCTS[i], recipeList:list, deriveFromRecipe:true};
+          toast('Modo “Receta múltiple” aplicado','ok'); rerenderRow(); return;
+        }
+      });
+
+      tr.querySelector('.saveMap')?.addEventListener('click', async ()=>{
+        const mode = tr.querySelector('.modeSel')?.value || 'none';
+
+        if(mode==='unidad'){
+          const v = Number(tr.querySelector('.unitStock')?.value||0);
+          if(!(v>=0)){ toast('Ingresa stock válido','warn'); return; }
+          await updateDoc(doc(db,'products', id), { stock: Math.round(v), recipe:{ingredient:'unidad'}, uKind:'unit', deriveFromRecipe:false, updatedAt: serverTimestamp() });
+          p.stock = Math.round(v); p.recipe={ingredient:'unidad'}; p.deriveFromRecipe=false;
+          toast('Stock por producto guardado','ok'); renderProducts(); return;
+        }
+        if(mode==='none'){
+          await updateDoc(doc(db,'products', id), { recipe:{ingredient:'none'}, recipeList:[], deriveFromRecipe:false, updatedAt: serverTimestamp() });
+          p.recipe={ingredient:'none'}; p.recipeList=[]; p.deriveFromRecipe=false;
+          toast('Receta quitada','ok'); renderProducts(); return;
+        }
+        if(mode==='simple'){
+          const sel = tr.querySelector('.ingrSel');
+          const inp = tr.querySelector('.amountInp');
+          const ingr = sel?.value;
+          let val  = Number(inp?.value||0);
+          if(!ingr){ toast('Selecciona ingrediente','warn'); return; }
+          const kind = ingredientKind(ingr);
+          if(kind==='unit_bucket' && !(val>0)){ val = 1; inp.value = '1'; }
+          if(!(val>0)){ toast('Ingresa consumo válido','warn'); return; }
+          const payload = {ingredient:ingr};
+          if(kind==='chicken'){ payload.amount = val; payload.unit='chicken'; }
+          else if(kind==='volume_ml'){ payload.amount_ml = Math.round(val); payload.unit='ml'; }
+          else { payload.amount_units = Math.max(1, Math.round(val)); payload.unit='unit'; }
+          await updateDoc(doc(db,'products', id), { recipe:payload, recipeList:[], deriveFromRecipe:true, updatedAt: serverTimestamp() });
+          p.recipe=payload; p.recipeList=[]; p.deriveFromRecipe=true;
+          toast('Receta simple guardada','ok'); renderProducts(); return;
+        }
+        if(mode==='multi'){
+          const list = [];
+          tr.querySelectorAll('.rc-item').forEach(div=>{
+            const sel = div.querySelector('.rc-ing');
+            let val = Number(div.querySelector('.rc-val')?.value||0);
+            const ingr = sel?.value;
+            if(!ingr) return;
+            const kind = ingredientKind(ingr);
+            if(kind==='unit_bucket' && !(val>0)) val = 1; // default 1
+            if(!(val>0)) return;
+            if(kind==='chicken') list.push({ingredient:ingr, amount:val});
+            else if(kind==='volume_ml') list.push({ingredient:ingr, amount_ml:Math.round(val)});
+            else list.push({ingredient:ingr, amount_units:Math.max(1,Math.round(val))});
+          });
+          if(!list.length){ toast('Agrega al menos un componente','warn'); return; }
+          await updateDoc(doc(db,'products', id), { recipeList:list, recipe:{ingredient:'__multi__'}, deriveFromRecipe:true, updatedAt: serverTimestamp() });
+          p.recipeList=list; p.deriveFromRecipe=true;
+          toast('Receta múltiple guardada','ok'); renderProducts(); return;
+        }
+      });
+
+      // SIMPLE: autocompletar a 1 cuando se elige gaseosa
+      const ingrSel = tr.querySelector('.ingrSel');
+      const amountInp = tr.querySelector('.amountInp');
+      if(ingrSel && amountInp){
+        const refresh=()=>{
+          const ingr = ingrSel.value;
+          let val  = Number(amountInp.value||0);
+          const k = ingredientKind(ingr);
+          amountInp.step = (k==='chicken'?'0.125':'1');
+          amountInp.placeholder = (k==='chicken'?'ej: 0.125 (1/8)':
+                                    k==='volume_ml'?'ml por unidad (ej: 350)':'unid por producto (ej: 1)');
+          tr.querySelector('.input small').textContent = (k==='chicken'?'pollo': k==='volume_ml'?'ml':'unid');
+          if(k==='unit_bucket' && !(val>0)){ amountInp.value='1'; val=1; }
+          const temp = JSON.parse(JSON.stringify(p));
+          temp.recipe = {ingredient:ingr};
+          if(k==='chicken') temp.recipe.amount = val;
+          else if(k==='volume_ml') temp.recipe.amount_ml = val;
+          else temp.recipe.amount_units = Math.max(1, Math.round(val||1));
+          prev.textContent = computeDerivedStock(temp) || '—';
+        };
+        ingrSel.addEventListener('change', refresh);
+        amountInp.addEventListener('input', refresh);
+      }
+
+      // MULTI dinámico
+      tr.querySelector('.rc-add')?.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const wrap = tr.querySelector('.rc-list');
+        const div = document.createElement('div');
+        div.className='rc-item';
+        div.innerHTML = `
+          <select class="pill rc-ing">${ING_SELECT}</select>
+          <span class="input" style="width:240px">
+            <i class="fa-solid fa-drumstick-bite"></i>
+            <input class="rc-val" type="number" step="0.125" min="0" placeholder="ej: 0.125 (1/8)">
+            <small>pollo</small>
+          </span>
+          <button class="btn rc-del"><i class="fa-solid fa-trash"></i></button>`;
+        wrap.insertBefore(div, wrap.lastElementChild);
+
+        const sel = div.querySelector('.rc-ing');
+        const val = div.querySelector('.rc-val');
+        const icon= div.querySelector('.input i');
+        const unit= div.querySelector('.input small');
+        const refresh=()=>{
+          const k = ingredientKind(sel.value);
+          if(k==='chicken'){ val.step='0.125'; val.placeholder='ej: 0.125 (1/8)'; icon.className='fa-solid fa-drumstick-bite'; unit.textContent='pollo'; }
+          else if(k==='volume_ml'){ val.step='1'; val.placeholder='ml por unidad (ej: 350)'; icon.className='fa-solid fa-wine-bottle'; unit.textContent='ml'; }
+          else { val.step='1'; val.placeholder='unid por producto (ej: 1)'; icon.className='fa-solid fa-bottle-water'; unit.textContent='unid'; if(!(Number(val.value||0)>0)) val.value='1'; }
+          // preview
+          const temp = JSON.parse(JSON.stringify(p));
+          const items = Array.from(wrap.querySelectorAll('.rc-item')).map(d=>{
+            const ingr = d.querySelector('.rc-ing').value;
+            let v = Number(d.querySelector('.rc-val')?.value||0);
+            const kk = ingredientKind(ingr);
+            if(kk==='unit_bucket' && !(v>0)) v=1;
+            return kk==='chicken' ? {ingredient:ingr, amount:v}
+                 : kk==='volume_ml' ? {ingredient:ingr, amount_ml:v}
+                 : {ingredient:ingr, amount_units:Math.max(1,Math.round(v))};
+          });
+          temp.recipeList = items;
+          prev.textContent = computeDerivedStock(temp) || '—';
+        };
+        sel.addEventListener('change', refresh);
+        val.addEventListener('input', refresh);
+        div.querySelector('.rc-del').addEventListener('click', (ev)=>{ ev.preventDefault(); div.remove(); refresh(); });
+        refresh();
+      });
+
+      tr.querySelectorAll('.rc-item').forEach(div=>{
+        const sel = div.querySelector('.rc-ing');
+        const val = div.querySelector('.rc-val');
+        const icon= div.querySelector('.input i');
+        const unit= div.querySelector('.input small');
+        const k = ingredientKind(sel.value);
+        if(k==='chicken'){ val.step='0.125'; icon.className='fa-solid fa-drumstick-bite'; unit.textContent='pollo'; }
+        else if(k==='volume_ml'){ val.step='1'; icon.className='fa-solid fa-wine-bottle'; unit.textContent='ml'; }
+        else { val.step='1'; icon.className='fa-solid fa-bottle-water'; unit.textContent='unid'; if(!(Number(val.value||0)>0)) val.value='1'; }
+      });
+    });
+  }
+
+  // ===== Guardar TODO (pollo, bebidas, sodas) + fijar stock inicial del día
+  async function saveBase(){
+    // BASE: pollo y bebidas (L)
+    const pollo = Math.max(0, Number($('#pollo').value||0));
+    const chichaMl   = Math.max(0, Math.round((Number($('#chichaL').value||0))*1000));
+    const maracuyaMl = Math.max(0, Math.round((Number($('#maracuyaL').value||0))*1000));
+    const limonadaMl = Math.max(0, Math.round((Number($('#limonadaL').value||0))*1000));
+
+    const batch = writeBatch(db);
+    batch.set(doc(db,'recipes','chicken'), { stock: pollo, kind:'chicken',     updatedAt: serverTimestamp() }, {merge:true});
+    batch.set(doc(db,'recipes','chicha'),  { stock: chichaMl, kind:'volume_ml', updatedAt: serverTimestamp() }, {merge:true});
+    batch.set(doc(db,'recipes','maracuya'),{ stock: maracuyaMl, kind:'volume_ml', updatedAt: serverTimestamp() }, {merge:true});
+    batch.set(doc(db,'recipes','limonada'),{ stock: limonadaMl, kind:'volume_ml', updatedAt: serverTimestamp() }, {merge:true});
+
+    // SODAS: unit_bucket
+    for(const s of SODA_BUCKETS){
+      const vRaw = SODA_INPUTS[s.id]?.value;
+      if(vRaw==='') continue; // no tocar si vacío
+      const stockU = Math.max(0, Math.round(Number(vRaw)||0));
+      batch.set(doc(db,'recipes', s.id), { stock: stockU, kind:'unit_bucket', updatedAt: serverTimestamp() }, {merge:true});
+    }
+    await batch.commit();
+
+    // Fijar "start" del día si no existe
+    await runTransaction(db, async (tx)=>{
+      const key = todayKey();
+      const ref = doc(db,'days', key);
+      const snap = await tx.get(ref);
+      if(!snap.exists() || !snap.data()?.start){
+        // leer recetas actuales para guardar start
+        const rs = await getDocs(collection(db,'recipes'));
+        const map={}; rs.forEach(d=> map[d.id]=d.data());
+        tx.set(ref, {
+          start: {
+            chicken:Number(map.chicken?.stock||0),
+            chicha:Number(map.chicha?.stock||0),
+            maracuya:Number(map.maracuya?.stock||0),
+            limonada:Number(map.limonada?.stock||0),
+            soda_500:Number(map.soda_500?.stock||0),
+            soda_1000:Number(map.soda_1000?.stock||0),
+            soda_1500:Number(map.soda_1500?.stock||0),
+            soda_3000:Number(map.soda_3000?.stock||0),
+          },
+          createdAt: serverTimestamp()
+        }, {merge:true});
+      }
+    });
+
+    await loadRecipesToCache();
+    toast('Stock del día guardado (pollo, bebidas y gaseosas)','ok');
+  }
+  $('#saveBase').onclick = saveBase;
+
+  $('#reloadBase').onclick = async ()=>{
+    await loadBase();
+    renderSodaInputs();
+    await hydrateSodasFromRecipes();
+    await loadRecipesToCache();
+  };
+  $('#reloadSodas').addEventListener('click', async ()=>{
+    await hydrateSodasFromRecipes();
+  });
+
+  // ===== Recalcular derivados
+  async function recalcInventoryFromRecipes(){
+    await loadRecipesToCache();
+    const batch = writeBatch(db);
+    let count=0;
+    for(const p of PRODUCTS){
+      const m = modeOf(p);
+      if(m==='unidad' || m==='none') continue;
+
+      let servings = 0;
+      if(m==='simple'){
+        const r = p.recipe, rec = RECIPES[r.ingredient]; if(!rec) continue;
+        if(rec.kind==='chicken'){
+          const base8 = toOctavos(Number(rec.stock||0));
+          const per8  = toOctavos(Number(r.amount||0));
+          if(per8<=0) continue;
+          servings = Math.floor(base8 / per8);
+        }else if(rec.kind==='volume_ml'){
+          const baseMl = Number(rec.stock||0);
+          const perMl  = Number(r.amount_ml||0);
+          if(perMl<=0) continue;
+          servings = Math.floor(baseMl / perMl);
+        }else{
+          const baseU = Math.floor(Number(rec.stock||0));
+          const perU  = Math.max(1, Math.floor(Number(r.amount_units||0)||1));
+          servings = Math.floor(baseU / perU);
+        }
+      }else if(m==='multi'){
+        const list = Array.isArray(p.recipeList)? p.recipeList : [];
+        if(!list.length) continue;
+        servings = Infinity;
+        for(const c of list) servings = Math.min(servings, computeServingsFromComponent(c));
+        if(!isFinite(servings)) servings = 0;
+      }
+      batch.update(doc(db,'products', p.id), { stock: servings, updatedAt: serverTimestamp() });
+      count++;
+    }
+    if(count){ await batch.commit(); toast(`Inventario recalculado (${count} productos)`, 'ok'); }
+    else toast('No hay productos mapeados para recalcular', 'warn');
+
+    await loadProducts(); renderProducts();
+  }
+  $('#recalcAll').addEventListener('click', recalcInventoryFromRecipes);
+
+  // ===== Ventas (desc. recetas derivadas)
+  async function getRecipesMapTx(tx){
+    const ids = ['chicken','chicha','maracuya','limonada','soda_500','soda_1000','soda_1500','soda_3000'];
+    const map = {};
+    for(const id of ids){
+      const ref = doc(db,'recipes',id);
+      const snap = await tx.get(ref);
+      const d = snap.exists() ? snap.data() : {};
+      let kind = d.kind;
+      if(!kind){
+        if(id==='chicken') kind='chicken';
+        else if(['chicha','maracuya','limonada'].includes(id)) kind='volume_ml';
+        else kind='unit_bucket';
+      }
+      map[id] = { ref, stock: Number(d.stock||0), kind };
+    }
+    return map;
+  }
+  async function getProductsByIdsTx(tx, ids){
+    const out = {};
+    for(const id of ids){
+      const ref = doc(db,'products', id);
+      const snap = await tx.get(ref);
+      if(!snap.exists()) throw new Error('Producto no existe: '+id);
+      out[id] = { ref, data: { id, ...snap.data()} };
+    }
+    return out;
+  }
+  function sumConsumptionsForProduct(p, qty){
+    const m = modeOf(p);
+    if(m==='unidad' || m==='none' || qty<=0) return [];
+    const list = [];
+    const add = (ingr, k, v)=>{ if(v>0) list.push({ingr, kind:k, consume:v}); };
+
+    if(m==='simple'){
+      const r = p.recipe, ingr = r.ingredient; if(!ingr) return list;
+      const k = ingredientKind(ingr);
+      if(k==='chicken') add(ingr,'chicken', toOctavos(Number(r.amount||0)) * qty);
+      else if(k==='volume_ml') add(ingr,'volume_ml', Number(r.amount_ml||0) * qty);
+      else add(ingr,'unit_bucket', Math.max(1,Math.round(Number(r.amount_units||1))) * qty);
+      return list;
+    }
+    if(m==='multi'){
+      const comps = Array.isArray(p.recipeList)? p.recipeList : [];
+      for(const c of comps){
+        const k = ingredientKind(c.ingredient);
+        if(k==='chicken') add(c.ingredient,'chicken', toOctavos(Number(c.amount||0)) * qty);
+        else if(k==='volume_ml') add(c.ingredient,'volume_ml', Number(c.amount_ml||0) * qty);
+        else add(c.ingredient,'unit_bucket', Math.max(1,Math.round(Number(c.amount_units||1))) * qty);
+      }
+      return list;
+    }
+    return list;
+  }
+  async function recomputeDerivedForIngredients(tx, ingrSet){
+    const psnap = await tx.get(query(collection(db,'products'), orderBy('name')));
+    const prods = [];
+    psnap.forEach(d=>prods.push({id:d.id, ...d.data()}));
+    for(const p of prods){
+      const m = modeOf(p);
+      if(m==='unidad' || m==='none') continue;
+      let depends=false;
+      if(m==='simple'){ depends = p.recipe?.ingredient && ingrSet.has(p.recipe.ingredient); }
+      else { const list = Array.isArray(p.recipeList)? p.recipeList:[]; depends = list.some(c=>ingrSet.has(c.ingredient)); }
+      if(!depends) continue;
+
+      let s=0;
+      if(m==='simple'){
+        const r = p.recipe;
+        const rs = (await tx.get(doc(db,'recipes',r.ingredient))).data()||{};
+        const k = (rs.kind || ingredientKind(r.ingredient));
+        if(k==='chicken'){
+          const base8 = toOctavos(Number(rs.stock||0));
+          const per8  = toOctavos(Number(r.amount||0));
+          if(per8>0) s = Math.floor(base8/per8);
+        }else if(k==='volume_ml'){
+          const baseMl = Number(rs.stock||0);
+          const perMl  = Number(r.amount_ml||0);
+          if(perMl>0) s = Math.floor(baseMl/perMl);
+        }else{
+          const baseU = Math.floor(Number(rs.stock||0));
+          const perU  = Math.max(1, Math.floor(Number(r.amount_units||0)||1));
+          s = Math.floor(baseU/perU);
+        }
+      }else{
+        const list = Array.isArray(p.recipeList)? p.recipeList : [];
+        s = Infinity;
+        for(const c of list){
+          const rs = (await tx.get(doc(db,'recipes',c.ingredient))).data()||{};
+          const k = (rs.kind || ingredientKind(c.ingredient));
+          if(k==='chicken'){
+            const base8 = toOctavos(Number(rs.stock||0));
+            const per8  = toOctavos(Number(c.amount||0));
+            if(per8<=0){ s=0; break; }
+            s = Math.min(s, Math.floor(base8/per8));
+          }else if(k==='volume_ml'){
+            const baseMl = Number(rs.stock||0);
+            const perMl  = Number(c.amount_ml||0);
+            if(perMl<=0){ s=0; break; }
+            s = Math.min(s, Math.floor(baseMl/perMl));
+          }else{
+            const baseU = Math.floor(Number(rs.stock||0));
+            const perU  = Math.max(1, Math.floor(Number(c.amount_units||0)||1));
+            if(perU<=0){ s=0; break; }
+            s = Math.min(s, Math.floor(baseU/perU));
+          }
+        }
+        if(!isFinite(s)) s=0;
+      }
+      tx.update(doc(db,'products', p.id), { stock: s, updatedAt: serverTimestamp() });
+    }
+  }
+  async function processSale(items){
+    if(!Array.isArray(items) || !items.length) return;
+    await runTransaction(db, async (tx)=>{
+      const recipes = await getRecipesMapTx(tx);
+      const ids = [...new Set(items.map(i=>i.productId))];
+      const prods = await getProductsByIdsTx(tx, ids);
+
+      const consumeMap = new Map(); // ingr -> {kind,total}
+      for(const it of items){
+        const p = prods[it.productId].data;
+        const qty = Number(it.qty||0);
+        const parts = sumConsumptionsForProduct(p, qty);
+        for(const c of parts){
+          const prev = consumeMap.get(c.ingr) || {kind:c.kind,total:0};
+          prev.total += c.consume;
+          consumeMap.set(c.ingr, prev);
+        }
+      }
+
+      const touched = new Set();
+      for(const [ingr, {kind,total}] of consumeMap.entries()){
+        const rec = recipes[ingr]; if(!rec) continue;
+        if(kind==='chicken'){
+          const next8 = Math.max(0, toOctavos(rec.stock) - total);
+          tx.set(rec.ref, { stock: fromOctavos(next8), kind:'chicken', updatedAt: serverTimestamp() }, {merge:true});
+        }else if(kind==='volume_ml'){
+          const next = Math.max(0, Math.round(rec.stock) - total);
+          tx.set(rec.ref, { stock: next, kind:'volume_ml', updatedAt: serverTimestamp() }, {merge:true});
+        }else{ // unit_bucket
+          const next = Math.max(0, Math.round(rec.stock) - Math.round(total));
+          tx.set(rec.ref, { stock: next, kind:'unit_bucket', updatedAt: serverTimestamp() }, {merge:true});
+        }
+        touched.add(ingr);
+      }
+      await recomputeDerivedForIngredients(tx, touched);
+    });
+  }
+  window.processSale = processSale;
+
+  // ===== Boleta del día (HTML descargable)
+  async function downloadBoleta(){
+    const key = todayKey();
+    const daySnap = await getDoc(doc(db,'days', key));
+    const hasStart = (daySnap.exists() && daySnap.data().start);
+    const start = hasStart ? daySnap.data().start : {};
+
+    const rs = await getDocs(collection(db,'recipes'));
+    const map={}; rs.forEach(d=> map[d.id]=d.data());
+    const cur = {
+      chicken:  Number(map.chicken?.stock||0),
+      chicha:   Number(map.chicha?.stock||0),
+      maracuya: Number(map.maracuya?.stock||0),
+      limonada: Number(map.limonada?.stock||0),
+      soda_500: Number(map.soda_500?.stock||0),
+      soda_1000:Number(map.soda_1000?.stock||0),
+      soda_1500:Number(map.soda_1500?.stock||0),
+      soda_3000:Number(map.soda_3000?.stock||0),
+    };
+
+    const items = [
+      {id:'chicken',  name:'Pollo', unit:'pollo', kind:'chicken'},
+      {id:'chicha',   name:'Chicha', unit:'ml', kind:'volume_ml'},
+      {id:'maracuya', name:'Maracuyá', unit:'ml', kind:'volume_ml'},
+      {id:'limonada', name:'Limonada', unit:'ml', kind:'volume_ml'},
+      {id:'soda_500', name:'Gaseosa 500 ml', unit:'unid', kind:'unit_bucket'},
+      {id:'soda_1000',name:'Gaseosa 1 L',    unit:'unid', kind:'unit_bucket'},
+      {id:'soda_1500',name:'Gaseosa 1.5 L',  unit:'unid', kind:'unit_bucket'},
+      {id:'soda_3000',name:'Gaseosa 3 L',    unit:'unid', kind:'unit_bucket'},
+    ];
+
+    const rows = items.map(it=>{
+      const s = Number(start[it.id]||0);
+      const c = Number(cur[it.id]||0);
+      const cons = Math.max(0, s - c);
+      let fmtS = s, fmtC = c, fmtCons = cons, extra='';
+      if(it.kind==='volume_ml'){ fmtS=(s/1000).toFixed(2)+' L'; fmtC=(c/1000).toFixed(2)+' L'; fmtCons=(cons/1000).toFixed(2)+' L'; }
+      if(it.kind==='chicken'){ extra=` (${Math.floor(c)} + ${Math.round((c-Math.floor(c))*8)}/8)`; }
+      return `<tr>
+        <td>${it.name}</td>
+        <td style="text-align:right">${hasStart?fmtS:'—'}</td>
+        <td style="text-align:right">${fmtC}${extra}</td>
+        <td style="text-align:right">${hasStart?fmtCons:'—'}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!doctype html>
+<html><head><meta charset="utf-8"><title>Boleta ${key}</title>
+<style>
+body{font-family:Inter,Arial;padding:20px;color:#111}
+h1{margin:0 0 10px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ddd;padding:8px}
+th{text-align:left;background:#f4f6fa}
+.small{color:#555}
+</style></head>
+<body>
+<h1>Lindero Grill • Boleta del día</h1>
+<div class="small">Fecha: ${key}</div>
+<div class="small">${hasStart?'Incluye stock inicial guardado al comenzar el día.':'(Aún no hay stock inicial hoy; guarda stock del día para fijarlo.)'}</div>
+<table>
+<thead><tr><th>Ítem</th><th>Stock inicial</th><th>Stock actual</th><th>Consumido</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+</body></html>`;
+
+    const blob = new Blob([html], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `boleta-${key}.html`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('Boleta descargada','ok');
+  }
+  $('#downloadBoleta').addEventListener('click', downloadBoleta);
+
+  // ===== Init
+  await loadBase();
+  renderSodaInputs();
+  await hydrateSodasFromRecipes();
+  await loadProducts();
+  await loadRecipesToCache();
+  renderProducts();
+  </script>
+</body>
+</html>

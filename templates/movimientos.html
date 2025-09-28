@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Movimientos • Lindero Grill</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<style>
+  /* ====== Paleta & base ====== */
+  :root{
+    --bg:#0a0c12;
+    --bg-grad:
+      radial-gradient(900px 600px at 10% -10%, rgba(66,76,109,.28) 0%, rgba(0,0,0,0) 60%),
+      radial-gradient(1000px 740px at 95% -25%, rgba(134,79,122,.22) 0%, rgba(0,0,0,0) 55%),
+      linear-gradient(180deg, #0a0c12 0%, #080a0f 100%);
+    --surface: rgba(18,19,26,.7);
+    --surface-strong: rgba(22,23,30,.85);
+    --line: rgba(255,255,255,.08);
+    --line-strong: rgba(255,255,255,.18);
+    --text:#eef2ff;
+    --muted:#aab4cf;
+
+    --accent:#ff7a00;
+    --accent2:#ffc36b;
+    --ok:#22c55e; 
+    --warn:#f59e0b; 
+    --info:#3b82f6; 
+    --danger:#ef4444;
+
+    --radius:16px;
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    --shadow-strong: 0 22px 60px rgba(0,0,0,.45);
+
+    --ticket-width:58mm;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    color:var(--text);
+    font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    background:var(--bg-grad);
+  }
+  a{color:#9bf3a6;text-decoration:none}
+  .wrap{max-width:1200px;margin:20px auto;padding:0 14px}
+
+  /* ====== Top bar ====== */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{font-weight:900;letter-spacing:.2px}
+  .brand b{
+    background:linear-gradient(90deg,var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent
+  }
+
+  /* ====== Cards / contenedores ====== */
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media (max-width:1000px){ .cards{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:580px){ .cards{grid-template-columns:1fr} }
+
+  .kpi,.card{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:calc(var(--radius) + 4px);
+    padding:16px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+    transition: border-color .2s ease, transform .15s ease;
+  }
+  .kpi:hover,.card:hover{ border-color: var(--line-strong); transform: translateY(-1px) }
+
+  .kpi h5{margin:0 0 8px;opacity:.9;display:flex;gap:8px;align-items:center}
+  .kpi .big{font-size:1.6rem;font-weight:900;letter-spacing:.2px}
+
+  .grid{display:grid;grid-template-columns:1fr 420px;gap:14px;margin-top:12px}
+  @media (max-width:1100px){ .grid{grid-template-columns:1fr} }
+
+  .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .muted{color:var(--muted)}
+
+  /* ====== Pills, inputs, botones ====== */
+  .pill{
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(23,25,33,.9), rgba(17,19,27,.9));
+    border-radius:999px;
+    padding:10px 12px;
+  }
+  input.pill, select.pill, textarea.pill{
+    width:100%; border-radius:12px; padding:12px 14px; outline:none;
+    transition: box-shadow .15s ease, border-color .15s ease, background .2s ease;
+    background:linear-gradient(180deg, rgba(18,20,28,.95), rgba(12,14,20,.95));
+  }
+  input.pill:focus, select.pill:focus, textarea.pill:focus{
+    border-color: rgba(147,197,253,.5);
+    box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+  }
+
+  .search{display:flex;gap:8px;flex-wrap:wrap}
+  .search input{min-width:220px}
+
+  .btn{
+    cursor:pointer; user-select:none;
+    background:linear-gradient(180deg, rgba(23,25,33,1), rgba(16,18,26,1));
+    border:1px solid var(--line); color:#fff; 
+    border-radius:12px; padding:10px 14px;
+    transition: transform .12s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); border-color:var(--line-strong); box-shadow: var(--shadow) }
+  .btn:active{ transform:translateY(0) scale(.99) }
+
+  .btn.ok{
+    background:linear-gradient(135deg, var(--ok), #a7efb1);
+    color:#0c2b18; border:none; font-weight:800;
+    box-shadow: 0 8px 20px rgba(34,197,94,.25);
+  }
+  .btn.warn{
+    background:linear-gradient(135deg,#1f2a3d,#162133);
+    color:#d9e7ff;border-color:#2a3347
+  }
+  .btn.primary{
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#2a1406;border:none;font-weight:800;
+    box-shadow: 0 8px 20px rgba(255,122,0,.25);
+  }
+  .btn.danger{
+    background:linear-gradient(135deg,#2a1618,#231114);
+    color:#ffd6d6;border-color:#3a2325; box-shadow: 0 8px 20px rgba(239,68,68,.18);
+  }
+
+  /* ====== Lista / Items ====== */
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{
+    display:grid;grid-template-columns:180px 1fr 320px;gap:12px;align-items:center;
+    background:linear-gradient(180deg, rgba(16,18,26,.92), rgba(12,14,20,.92));
+    border:1px solid var(--line); border-radius:14px; padding:12px;
+    transition: border-color .2s ease, transform .15s ease;
+  }
+  .item:hover{ border-color:rgba(255,255,255,.18); transform:translateY(-1px) }
+  .item.refunded{
+    border-color:rgba(34,197,94,.35);
+    box-shadow: inset 0 0 0 1px rgba(34,197,94,.22);
+    background:linear-gradient(180deg, rgba(18,30,22,.9), rgba(12,22,16,.9));
+  }
+  @media (max-width:900px){ .item{grid-template-columns:1fr} }
+  .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+  /* ====== Modales bonitos ====== */
+  .fx{position:fixed;inset:0;display:none;place-items:center;background:rgba(4,6,12,.6);backdrop-filter:blur(4px);z-index:1000}
+  .fx.show{display:grid}
+  .fx-card{
+    width:min(560px,92vw);
+    background:var(--surface-strong);
+    border:1px solid var(--line-strong);
+    border-radius:22px;padding:20px;text-align:center;
+    box-shadow: var(--shadow-strong); transform:scale(.98); opacity:0;
+    animation: pop .18s ease forwards;
+  }
+  @keyframes pop{ to{ transform:scale(1); opacity:1 } }
+  .fx-title{font-size:22px;font-weight:900;margin:2px 0 8px}
+  .fx-sub{color:var(--muted);margin-bottom:12px}
+  .fx-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+  .fx textarea{
+    width:100%;min-height:120px;background:linear-gradient(180deg,#121624,#0d1120);
+    border:1px solid var(--line);color:#fff;border-radius:12px;padding:12px
+  }
+
+  /* ====== Ticket (impresión) ====== */
+  #ticket{width:var(--ticket-width);padding:6mm;font-family:ui-monospace,Menlo,Consolas,monospace;color:#000;background:#fff;display:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #ticket.show{display:block}
+  #t-brand{margin:0 0 1mm;font-size:14pt;text-align:center}
+  #ticket .small{font-size:9pt}
+  #ticket table{width:100%;border-collapse:collapse;margin:2mm 0;table-layout:fixed}
+  #ticket th,#ticket td{font-size:10pt;padding:1mm 0;border-bottom:1px dashed #ddd}
+  #ticket th:nth-child(1),#ticket td:nth-child(1){width:64%;text-align:left;padding-right:4mm;overflow-wrap:anywhere}
+  #ticket th:nth-child(2),#ticket td:nth-child(2){width:36%;text-align:right;white-space:nowrap}
+  @media print{
+    @page{ size: var(--ticket-width) auto; margin:0; }
+    body>*:not(#ticket){ display:none !important; }
+    #ticket{display:block !important;position:fixed !important; top:0; left:0; width:var(--ticket-width) !important;margin:0 !important;background:#fff !important;color:#000 !important; z-index:999999 !important;}
+  }
+
+  /* ====== Toast ====== */
+  .toaster{position:fixed;top:14px;right:14px;z-index:1100;display:flex;flex-direction:column;gap:8px}
+  .toast{
+    background:linear-gradient(180deg,#121425,#0d1020);
+    border:1px solid var(--line);color:#fff;padding:10px 12px;border-radius:12px;
+    min-width:260px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px
+  }
+
+  /* ====== Detalles bonitos ====== */
+  ::selection{ background:rgba(255,122,0,.28) }
+  ::-webkit-scrollbar{ height:10px; width:10px }
+  ::-webkit-scrollbar-thumb{ background:#202334; border-radius:999px }
+  ::-webkit-scrollbar-thumb:hover{ background:#262b40 }
+  
+  /* pegalo en tu <style> */
+.dot-refund{
+  display:inline-block;width:10px;height:10px;border-radius:999px;
+  background:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,.35) inset;
+  vertical-align:middle; margin-left:6px;
+}
+
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand"><i class="fa-solid fa-fire"></i> Lindero <b>Grill</b> — Movimientos</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <a class="pill btn" href="panel"><i class="fa-solid fa-circle-arrow-left"></i> Regresar al panel</a>
+        <span class="pill" id="resume">—</span>
+        <!-- NUEVO: Recovery -->
+        <button class="btn danger" id="btnRecovery" title="Reiniciar datos (ventas/órdenes/retiros)">
+          <i class="fa-solid fa-trash-arrow-up"></i> Recovery
+        </button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="cards">
+      <div class="kpi">
+        <h5><i class="fa-solid fa-sack-dollar"></i> Disponible TOTAL</h5>
+        <div class="big" id="kTotal">S/ 0.00</div>
+        <div class="muted" style="margin-top:6px">Pagos acumulados (ventas/cambios/reembolsos) – <b>Retiros cerrados</b>.</div>
+      </div>
+      <div class="kpi">
+        <h5><i class="fa-solid fa-money-bill-wave"></i> Efectivo</h5>
+        <div class="big" id="kCash">S/ 0.00</div>
+      </div>
+      <div class="kpi">
+        <h5><i class="fa-solid fa-qrcode"></i> Yape / Plin</h5>
+        <div class="big" id="kQR">S/ 0.00</div>
+      </div>
+      <div class="kpi">
+        <h5><i class="fa-brands fa-cc-visa"></i> Visa / MC</h5>
+        <div class="big" id="kCard">S/ 0.00</div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px">
+      <!-- Historial -->
+      <section class="card">
+        <div class="row" style="margin-bottom:8px">
+          <h3 style="margin:0;display:flex;gap:8px;align-items:center"><i class="fa-solid fa-rotate"></i> Historial de retiros</h3>
+          <div class="search">
+            <label class="pill">Desde <input type="date" id="fFrom" style="margin-left:6px"></label>
+            <label class="pill">Hasta <input type="date" id="fTo" style="margin-left:6px"></label>
+            <button class="btn" id="fReload"><i class="fa-solid fa-rotate"></i> Cargar</button>
+            <button class="btn" id="fToday"><i class="fa-solid fa-bolt"></i> Últimos 30 días</button>
+          </div>
+        </div>
+        <div id="wList" class="list"></div>
+      </section>
+
+      <!-- Retiro -->
+      <aside class="card">
+        <h3 style="margin-top:0;display:flex;gap:8px;align-items:center"><i class="fa-solid fa-vault"></i> Retiro</h3>
+
+        <div class="row" style="margin-bottom:8px">
+          <div class="muted">Monto a retirar</div>
+          <div class="muted">Máx: <b id="maxAvail">S/ 0.00</b></div>
+        </div>
+        <input id="wAmount" type="number" step="0.01" min="0" class="pill" style="width:100%;background:#0f1218;border:1px solid var(--line);color:#fff;padding:12px;margin-bottom:8px">
+
+        <div class="muted" style="margin:6px 0 4px">Método <b>(solo para el baucher)</b>:</div>
+        <select id="wMethod" class="pill" style="width:100%;background:#0f1218;border:1px solid var(--line);color:#fff;padding:12px;margin-bottom:8px">
+          <option value="cash">Efectivo</option>
+          <option value="qr">Yape / Plin</option>
+          <option value="visa">Visa</option>
+          <option value="mastercard">MasterCard</option>
+        </select>
+
+        <div class="muted" style="margin:6px 0 4px">Motivo:</div>
+        <textarea id="wReason" class="pill" style="width:100%;min-height:90px;background:#0f1218;border:1px solid var(--line);color:#fff;padding:12px"></textarea>
+
+        <div class="actions" style="margin-top:12px">
+          <button class="btn ok" id="btnClose"><i class="fa-solid fa-print"></i> Cerrar caja e imprimir</button>
+        </div>
+
+        <div class="muted" style="margin-top:10px">
+          * El retiro descuenta del <b>total</b> sin importar el método elegido. El método solo aparece en el baucher.
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Ticket -->
+  <section id="ticket" aria-hidden="true">
+    <h2 id="t-brand">Lindero Grill</h2>
+    <div class="small" id="t-kind" style="text-align:center;margin:1mm 0 2mm">Cierre</div>
+
+    <div class="small"><b id="t-head-1">Cierre:</b> <span id="t-closeNo">—</span></div>
+    <div class="small"><b>F.Apertura:</b> <span id="t-openAt">—</span></div>
+    <div class="small"><b>F.Cierre:</b> <span id="t-closeAt">—</span></div>
+    <div class="small" style="margin-bottom:2mm"><b>Usuario:</b> CAJA</div>
+
+    <table>
+      <thead><tr><th>Item</th><th>Monto</th></tr></thead>
+      <tbody id="t-rows"></tbody>
+    </table>
+
+    <div class="small" style="margin-top:2mm">Impresión: <span id="t-when">—</span></div>
+    <div class="small">User Impresión: CAJA</div>
+  </section>
+
+  <!-- FX: Confirm genérico -->
+  <div class="fx" id="fxConfirm">
+    <div class="fx-card">
+      <div class="fx-title" id="fxTitle">¿Confirmar?</div>
+      <div class="fx-sub" id="fxSub">Esta acción no se puede deshacer.</div>
+      <div class="fx-actions">
+        <button class="btn" id="fxCancel">Cancelar</button>
+        <button class="btn ok" id="fxOk">Sí, continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FX: Reembolso -->
+  <div class="fx" id="fxRefund">
+    <div class="fx-card">
+      <div class="fx-title"><i class="fa-solid fa-arrow-rotate-left"></i> Reembolsar retiro</div>
+      <div class="fx-sub">Escribe el motivo del reembolso. El monto regresará a la caja.</div>
+      <textarea id="rfNote" placeholder="Motivo del reembolso…"></textarea>
+      <div class="fx-actions" style="margin-top:10px">
+        <button class="btn" id="rfCancel">Cancelar</button>
+        <button class="btn danger" id="rfOk"><i class="fa-solid fa-rotate"></i> Reembolsar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FX: Recovery -->
+  <div class="fx" id="fxWipe">
+    <div class="fx-card">
+      <div class="fx-title"><i class="fa-solid fa-triangle-exclamation"></i> Reiniciar datos (Recovery)</div>
+      <div class="fx-sub">Esto eliminará <b>Ventas</b>, <b>Órdenes</b> y <b>Retiros</b> (y reinicia contadores). No toca Productos ni Configuración. Para continuar escribe: <b>REINICIAR</b>.</div>
+      <input id="wipeWord" class="pill" placeholder="Escribe: REINICIAR" style="text-align:center;font-weight:800;letter-spacing:1px">
+      <label class="muted" style="display:block;margin:8px 0"><input type="checkbox" id="wipeIncludeOrders" checked> También borrar órdenes</label>
+      <div class="fx-actions">
+        <button class="btn" id="wipeCancel">Cancelar</button>
+        <button class="btn danger" id="wipeDo"><i class="fa-solid fa-trash"></i> Reiniciar ahora</button>
+      </div>
+      <div id="wipeProgress" class="muted" style="margin-top:10px;display:none">Procesando…</div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toaster" class="toaster"></div>
+
+<script type="module">
+/* ========= Firebase ========= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, onSnapshot,
+         serverTimestamp, query, where, orderBy, runTransaction, Timestamp,
+         deleteDoc, writeBatch, limit } 
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAqP22yZtwqrhu40hpL4n8gf02dsf74NLY",
+  authDomain: "lindero-grill-pos.firebaseapp.com",
+  projectId: "lindero-grill-pos",
+  storageBucket: "lindero-grill-pos.firebasestorage.app",
+  messagingSenderId: "611892354863",
+  appId: "1:611892354863:web:27512bb7b7551244090bda"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+/* ========= Utils ========= */
+const $ = s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const fmt = n=>'S/ '+Number(n||0).toFixed(2);
+function ymd(d){
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60*1000);
+  return local.toISOString().slice(0,10);
+}
+function toast(msg, kind='ok'){
+  const box = document.getElementById('toaster');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<i class="fa-solid ${kind==='ok'?'fa-circle-check':kind==='danger'?'fa-circle-xmark':'fa-circle-exclamation'}"></i> <div>${msg}</div>`;
+  box.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-6px)'; setTimeout(()=>el.remove(),220); }, 2200);
+}
+const methodLabel = m => ({cash:'Efectivo',qr:'Yape/Plin',visa:'Visa',mastercard:'MasterCard'})[m] || '—';
+
+/* ========= Auth ========= */
+await new Promise(res=>onAuthStateChanged(auth,u=>u?res():signInAnonymously(auth)));
+
+/* ========= Resumen HOY (solo barra informativa) ========= */
+function dayRange(dateObj){
+  const s=new Date(dateObj.getFullYear(),dateObj.getMonth(),dateObj.getDate(),0,0,0,0);
+  const e=new Date(dateObj.getFullYear(),dateObj.getMonth(),dateObj.getDate(),23,59,59,999);
+  return {start:Timestamp.fromDate(s),end:Timestamp.fromDate(e)};
+}
+{
+  const {start,end}=dayRange(new Date());
+  const qy = query(collection(db,'sales'), where('createdAt','>=',start), where('createdAt','<=',end), orderBy('createdAt','desc'));
+  onSnapshot(qy, snap=>{
+    let sold=0, refunds=0, diff=0;
+    snap.forEach(d=>{
+      const s=d.data();
+      const tot=Number(s.totals?.total||0);
+      if(s.type==='refund') refunds+=tot;           // negativo
+      else if(s.type==='exchange') diff += Number(s.payments?.[0]?.amount||0); // ±
+      else sold+=tot;
+    });
+    const net=sold+refunds+diff;
+    $('#resume').innerHTML=`<i class="fa-solid fa-calendar-day"></i> Hoy: Vendido ${fmt(sold)} • Reembolsos ${fmt(refunds)} • Diferencias ${fmt(diff)} • Neto ${fmt(net)}`;
+  });
+}
+
+function normMethod(m){
+  const s = String(m||'').toLowerCase();
+  if (/(cash|efec|efectivo)/.test(s)) return 'cash';
+  if (/(yape|plin|qr)/.test(s))       return 'qr';
+  if (/master/.test(s))               return 'mastercard';
+  if (/visa/.test(s))                 return 'visa';
+  return 'cash';
+}
+
+/* ========= KPIs acumulados (TODOS LOS DÍAS) ========= */
+let _allPaymentsTotal=0;
+let _methodTotals={cash:0,qr:0,visa:0,mastercard:0};
+let _withdrawClosedTotal=0;
+
+function refreshKPIs(){
+  const available = _allPaymentsTotal - _withdrawClosedTotal;
+  $('#kTotal').textContent = fmt(available);
+  $('#kCash').textContent  = fmt(_methodTotals.cash);
+  $('#kQR').textContent    = fmt(_methodTotals.qr);
+  $('#kCard').textContent  = fmt(_methodTotals.visa + _methodTotals.mastercard);
+  $('#maxAvail').textContent = fmt(available);
+}
+
+function listenPaymentsAllTime(){
+  onSnapshot(collection(db,'sales'), snap=>{
+    let total=0;
+    const by={cash:0,qr:0,visa:0,mastercard:0};
+
+    snap.forEach(d=>{
+      const s = d.data();
+
+      // Ignora ventas anuladas duras
+      if (['canceled','cancelled','void'].includes(String(s.status||'').toLowerCase())) return;
+
+      // a) Si viene el desglose de pagos, úsalo (ideal)
+      const pays = Array.isArray(s.payments) ? s.payments : [];
+
+      if (pays.length){
+        pays.forEach(p=>{
+          let amt = Number(p.amount||0);                  // puede ser negativo en refund/exchange
+          const m  = normMethod(p.method || p.channel);
+          total += amt;
+          if (by[m] != null) by[m] += amt;
+        });
+        return;
+      }
+
+      // b) Fallback sin "payments": usa totals + método suelto
+      //    - ventas normales => +total
+      //    - refund => total NEGATIVO
+      let t = 0;
+      if (s.totals && (s.totals.total!=null || s.totals.paid!=null)){
+        t = Number(s.totals.paid ?? s.totals.total ?? 0);
+      } else {
+        t = Number(s.total ?? 0);
+      }
+
+      // Si el doc marca refund, vuelve negativo
+      if (String(s.type||'').toLowerCase()==='refund') t = -Math.abs(t);
+
+      const m = normMethod(s.method || s.paymentMethod || s.channel);
+      total += t;
+      if (by[m] != null) by[m] += t;
+    });
+
+    _allPaymentsTotal = total;
+    _methodTotals = by;
+    refreshKPIs();     // actualiza TOTAL, Efectivo, Yape/Plin, Visa/MC
+  });
+}
+
+function listenWithdrawTotals(){
+  onSnapshot(query(collection(db,'withdrawals')), snap=>{
+    let tot=0;
+    snap.forEach(d=>{ const w=d.data(); if((w.status||'closed')==='closed') tot += Number(w.amount||0); });
+    _withdrawClosedTotal=tot;
+    refreshKPIs();
+  });
+}
+
+listenPaymentsAllTime();
+listenWithdrawTotals();
+
+/* ========= Crear retiro ========= */
+async function nextWithdrawNo(){
+  return await runTransaction(db, async (tx)=>{
+    const id = ymd(new Date());
+    const ref = doc(db,'counters','withdrawals');
+    const snap = await tx.get(ref);
+    let current = 0;
+    if(!snap.exists()){ tx.set(ref,{day:id,current:1}); current=1; }
+    else{
+      const d=snap.data();
+      if(d.day!==id){ current=1; tx.update(ref,{day:id,current:1}); }
+      else{ current=(d.current||0)+1; tx.update(ref,{current}); }
+    }
+    return String(current).padStart(3,'0');
+  });
+}
+
+const confirmFx = (title, sub)=> new Promise(res=>{
+  $('#fxTitle').textContent=title||'¿Confirmar?';
+  $('#fxSub').textContent=sub||'';
+  const fx=$('#fxConfirm'); fx.classList.add('show');
+  const off=()=>fx.classList.remove('show');
+  $('#fxCancel').onclick=()=>{ off(); res(false); };
+  $('#fxOk').onclick=()=>{ off(); res(true); };
+});
+
+$('#btnClose').onclick = async ()=>{
+  const amt = Number($('#wAmount').value||0);
+  const reason = ($('#wReason').value||'').trim();
+  const m = $('#wMethod').value;
+  if(amt<=0) return toast('Ingresa un monto válido','danger');
+
+  const available = _allPaymentsTotal - _withdrawClosedTotal;
+  if(amt>available+0.0001) return toast('Monto supera lo disponible','danger');
+
+  const ok = await confirmFx('¿Cerrar caja e imprimir?', `Se retirará ${fmt(amt)}. Quedará ${fmt(available-amt)}.`);
+  if(!ok) return;
+
+  try{
+    const no = await nextWithdrawNo();
+    const ref = await addDoc(collection(db,'withdrawals'),{
+      amount: amt,
+      method: m,          // SOLO impresión
+      reason,
+      status: 'closed',
+      createdAt: serverTimestamp(),
+      receiptNo: no
+    });
+    toast('Retiro registrado.');
+    await printClosureVoucher({id:ref.id, amount:amt, method:m, reason, receiptNo:no, createdAt:new Date()});
+    $('#wAmount').value=''; $('#wReason').value='';
+  }catch(e){ console.error(e); toast('No se pudo registrar: '+(e.message||e),'danger'); }
+};
+
+/* ========= Historial con filtro ========= */
+let _unsubW=null;
+
+function setLast30Days(){
+  const now = new Date();
+  const from = new Date(now); from.setDate(now.getDate()-30);
+  $('#fFrom').value = ymd(from);
+  $('#fTo').value   = ymd(now);
+}
+setLast30Days();
+
+function loadWithdrawals(){
+  if(_unsubW) _unsubW();
+  const from = $('#fFrom').value ? new Date($('#fFrom').value+'T00:00:00') : new Date('2000-01-01');
+  const to   = $('#fTo').value   ? new Date($('#fTo').value+'T23:59:59')   : new Date('2999-12-31');
+
+  const qy = query(
+    collection(db,'withdrawals'),
+    where('createdAt','>=', Timestamp.fromDate(from)),
+    where('createdAt','<=', Timestamp.fromDate(to)),
+    orderBy('createdAt','desc')
+  );
+
+    _unsubW = onSnapshot(qy, snap=>{
+    const box = $('#wList');
+    if(snap.empty){
+      box.innerHTML = '<div class="muted" style="padding:10px;border:1px dashed var(--line);border-radius:12px">Sin movimientos.</div>';
+      return;
+    }
+    box.innerHTML = '';
+
+    snap.forEach(d=>{
+      const w={id:d.id,...d.data()};
+      const dt=w.createdAt?.toDate ? w.createdAt.toDate() : new Date(w.createdAt||Date.now());
+      const status = (w.status||'closed');
+      const cls = status==='refunded' ? 'item refunded' : 'item';
+      // Correcto:
+      const badge = status === 'refunded'
+        ? '<span class="dot-refund" title="Reembolsado"></span>'
+        : '';
+
+      const item=document.createElement('div');
+      item.className=cls;
+      item.innerHTML=`
+        <div>
+          <div class="muted">${dt.toLocaleDateString()} ${dt.toLocaleTimeString().slice(0,8)}</div>
+          <div style="font-weight:900">${(w.reason||'—').toUpperCase()}</div>
+        </div>
+        <div>
+          <div><b>Método:</b> ${(w.method||'cash').toUpperCase()}</div>
+          ${badge}
+        </div>
+        <div class="row">
+          <div style="font-weight:900">${fmt(w.amount)}</div>
+          <div class="actions">
+            <button class="btn" data-print="${w.id}">
+              <i class="fa-solid fa-receipt"></i> Imprimir
+            </button>
+            ${
+              status === 'closed'
+                ? `<button class="btn danger" data-refund="${w.id}">
+                     <i class="fa-solid fa-arrow-rotate-left"></i> Reembolsar
+                   </button>`
+                : `<button class="btn danger" data-del="${w.id}">
+                     <i class="fa-solid fa-trash-can"></i> Eliminar
+                   </button>`
+            }
+          </div>
+        </div>`;
+      box.appendChild(item);
+    });
+
+    // listeners por render
+    box.querySelectorAll('[data-print]').forEach(b=> b.onclick = ()=> printWithdrawVoucher(b.dataset.print));
+    box.querySelectorAll('[data-refund]').forEach(b=> b.onclick = ()=> openRefund(b.dataset.refund));
+    box.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=> deleteWithdrawal(b.dataset.del));
+  });
+} // <<--- cierra la función aquí
+
+// fuera de la función:
+$('#fReload').onclick = loadWithdrawals;
+$('#fToday').onclick  = ()=>{ setLast30Days(); loadWithdrawals(); };
+loadWithdrawals();
+
+/* ========= Bauchers ========= */
+function ticketShow(rows){
+  const tbody = $('#t-rows');
+  tbody.innerHTML = rows.map(r=>`<tr><td>${r.l}</td><td>${fmt(r.v)}</td></tr>`).join('');
+  $('#t-when').textContent = new Date().toLocaleString();
+  $('#ticket').classList.add('show');
+  return new Promise(resolve=>{
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ window.print(); resolve(); }));
+  });
+}
+window.addEventListener('afterprint', ()=> $('#ticket').classList.remove('show'));
+
+async function printClosureVoucher(w){
+  // Recalcular totales actuales tras crear el retiro
+  const paymentsSnap = await getDocs(collection(db,'sales'));
+  let by={cash:0,qr:0,visa:0,mastercard:0}, totalPays=0;
+  paymentsSnap.forEach(d=>{
+    const s=d.data(); (s.payments||[]).forEach(p=>{
+      const amt=Number(p.amount||0);
+      totalPays+=amt; if(by[p.method]!=null) by[p.method]+=amt;
+    });
+  });
+
+  const wdSnap = await getDocs(query(collection(db,'withdrawals')));
+  let totalWithdrawClosed = 0;
+  wdSnap.forEach(d=>{ const x=d.data(); if((x.status||'closed')==='closed') totalWithdrawClosed += Number(x.amount||0); });
+
+  const remain = totalPays - totalWithdrawClosed;
+
+  // Encabezado EXACTO TIPO FOTO
+  $('#t-kind').textContent = 'Cierre';
+  $('#t-closeNo').textContent = w.receiptNo || '—';
+  $('#t-openAt').textContent = '—';
+  $('#t-closeAt').textContent = new Date().toLocaleString();
+
+  const rows = [
+    {l:'Entradas', v: totalPays},
+    {l:'Monto de apertura', v: 0},
+    {l:'Ventas', v: totalPays},
+    {l:'Medio de Pago  Visa', v: by.visa},
+    {l:'              Mastercard', v: by.mastercard},
+    {l:'              Yape', v: by.qr},
+    {l:'              Globo', v: 0},
+    {l:'Total Ventas Credito', v: 0},
+    {l:'Cobro creditos Efectivo', v: 0},
+    {l:'Otras entradas', v: 0},
+    {l:'Salidas', v: totalWithdrawClosed},
+    {l:'Pago Proveedores', v: 0},
+    {l:'Otras Salidas', v: 0},
+    {l:'Retiro De Efectivo', v: Number(w.amount||0)},
+    {l:'Monto queda', v: remain},
+    {l:'Sobrante/faltante', v: 0}
+  ];
+  await ticketShow(rows);
+}
+
+async function printWithdrawVoucher(id){
+  const d = await getDoc(doc(db,'withdrawals',id));
+  if(!d.exists()) return;
+  const w=d.data();
+  $('#t-kind').textContent = 'Retiro de caja';
+  $('#t-closeNo').textContent = w.receiptNo || '—';
+  $('#t-openAt').textContent = '—';
+  $('#t-closeAt').textContent = (w.createdAt?.toDate ? w.createdAt.toDate() : new Date()).toLocaleString();
+
+  const rows = [
+    {l:'Motivo', v: 0},
+    {l:`${(w.reason||'—').toUpperCase()}`, v: 0},
+    {l:'Método', v: 0},
+    {l:`${(w.method||'CASH').toUpperCase()}`, v: 0},
+    {l:'Retiro De Efectivo', v: Number(w.amount||0)}
+  ];
+  await ticketShow(rows);
+}
+
+/* ========= Reembolso retiro ========= */
+let _refundTarget=null;
+function openRefund(withdrawId){
+  _refundTarget = withdrawId;
+  $('#rfNote').value='';
+  $('#fxRefund').classList.add('show');
+}
+$('#rfCancel').onclick=()=>$('#fxRefund').classList.remove('show');
+$('#rfOk').onclick = async ()=>{
+  const id=_refundTarget; if(!id) return;
+  $('#fxRefund').classList.remove('show');
+  try{
+    const note = ($('#rfNote').value||'').trim();
+    const ref = doc(db,'withdrawals',id);
+    const snap = await getDoc(ref);
+    if(!snap.exists()) return toast('No existe el retiro','danger');
+    const w=snap.data();
+    if((w.status||'closed')!=='closed'){ toast('Ya estaba reembolsado.','danger'); return; }
+
+    await updateDoc(ref,{
+      status:'refunded',
+      refundReason: note,
+      refundedAt: serverTimestamp()
+    });
+    toast('Reembolso registrado. El dinero volvió a la caja.');
+  }catch(e){ console.error(e); toast('No se pudo reembolsar: '+(e.message||e),'danger'); }
+};
+
+async function deleteWithdrawal(id){
+  try{
+    const ref  = doc(db,'withdrawals', id);
+    const snap = await getDoc(ref);
+    if(!snap.exists()){ toast('El registro no existe','danger'); return; }
+    const w = snap.data();
+
+    // Solo borrar si está reembolsado
+    if((w.status||'closed') !== 'refunded'){
+      toast('Solo puedes eliminar retiros que estén reembolsados.','danger');
+      return;
+    }
+
+    const ok = await confirmFx(
+      'Eliminar registro',
+      `Se eliminará el retiro reembolsado por ${fmt(w.amount)}. Esta acción no se puede deshacer.`
+    );
+    if(!ok) return;
+
+    await deleteDoc(ref);
+    toast('Registro eliminado.');
+    // KPIs/lista se actualizan solos por los onSnapshot.
+  }catch(e){
+    console.error(e);
+    toast('No se pudo eliminar: '+(e.message||e),'danger');
+  }
+}
+
+/* ========= Recovery (wipe) ========= */
+$('#btnRecovery').onclick = ()=>{
+  $('#wipeWord').value='';
+  $('#wipeIncludeOrders').checked = true;
+  $('#wipeProgress').style.display='none';
+  $('#fxWipe').classList.add('show');
+};
+$('#wipeCancel').onclick = ()=> $('#fxWipe').classList.remove('show');
+
+async function wipeCollection(name, batchSize=300){
+  while(true){
+    const snap = await getDocs(query(collection(db,name), limit(batchSize)));
+    if(snap.empty) break;
+    const batch = writeBatch(db);
+    snap.docs.forEach(ds=> batch.delete(ds.ref));
+    await batch.commit();
+    await new Promise(r=>setTimeout(r,40)); // respiro
+  }
+}
+
+$('#wipeDo').onclick = async ()=>{
+  const word = ($('#wipeWord').value||'').trim().toUpperCase();
+  const includeOrders = $('#wipeIncludeOrders').checked;
+  if(word!=='REINICIAR'){ toast('Escribe REINICIAR para continuar','danger'); return; }
+
+  // UI lock
+  $('#wipeProgress').style.display='block';
+  $('#wipeProgress').textContent='Eliminando ventas…';
+  $('#wipeDo').disabled = true; $('#wipeCancel').disabled = true;
+
+  try{
+    // ventas + retiros + (órdenes opcionalmente)
+    await wipeCollection('sales');
+    $('#wipeProgress').textContent='Eliminando retiros…';
+    await wipeCollection('withdrawals');
+    if(includeOrders){
+      $('#wipeProgress').textContent='Eliminando órdenes…';
+      await wipeCollection('orders');
+    }
+    // contadores
+    try{ await deleteDoc(doc(db,'counters','sales')); }catch{}
+    try{ await deleteDoc(doc(db,'counters','withdrawals')); }catch{}
+
+    $('#fxWipe').classList.remove('show');
+    toast('Recovery completado. Todo quedó en cero.');
+  }catch(e){
+    console.error(e);
+    toast('Error durante el recovery: '+(e.message||e),'danger');
+  }finally{
+    $('#wipeDo').disabled = false; $('#wipeCancel').disabled = false;
+    $('#wipeProgress').style.display='none';
+  }
+};
+</script>
+</body>
+</html>

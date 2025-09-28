@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POS • Acceso</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+  <!-- Iconos -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <!-- Botón flotante de WhatsApp -->
+  <a class="wa-float"
+     href="https://wa.me/51925225213?text=Necesito%20soporte%20para%20el%20POS"
+     target="_blank" rel="noopener" title="¿Necesitas soporte? Contáctame">
+    <i class="fa-brands fa-whatsapp"></i>
+    <span>¿Necesitas soporte? Contáctame</span>
+  </a>
+
+  <main class="wrap">
+    <section class="card" id="loginCard" aria-labelledby="heading-login">
+      <div class="brand">
+        <!-- Si tienes static/logo.png se mostrará; si no, se ve el icono -->
+        <img class="logo-img"
+             src="{{ url_for('static', filename='logo.png') }}"
+             alt="Lindero Grill"
+             onerror="this.style.display='none';document.getElementById('logoIcon').style.display='grid';">
+        <div id="logoIcon" class="logo"><i class="fa-solid fa-fire-burner"></i></div>
+        <div>
+          <h1 id="heading-login" class="title">Lindero <b>Grill</b></h1>
+          <p class="muted">Acceso al sistema POS</p>
+        </div>
+      </div>
+
+      <!-- Indicador de PIN (4 puntos) -->
+      <div class="dots" id="dots" aria-label="Progreso PIN">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <p id="msg" class="msg" aria-live="polite"></p>
+
+      <!-- Teclado numérico -->
+      <div class="pad" role="group" aria-label="Teclado numérico">
+        <button type="button" data-k="1">1</button>
+        <button type="button" data-k="2">2</button>
+        <button type="button" data-k="3">3</button>
+        <button type="button" data-k="4">4</button>
+        <button type="button" data-k="5">5</button>
+        <button type="button" data-k="6">6</button>
+        <button type="button" data-k="7">7</button>
+        <button type="button" data-k="8">8</button>
+        <button type="button" data-k="9">9</button>
+        <button type="button" class="ghost" data-k="x" title="Borrar">
+          <i class="fa-solid fa-delete-left"></i>
+        </button>
+        <button type="button" data-k="0">0</button>
+        <button type="button" id="ok" class="primary" title="Ingresar">
+          <i class="fa-solid fa-right-to-bracket"></i> Ingresar
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Overlay de Carga -->
+  <div id="loading" class="overlay" aria-hidden="true">
+    <div class="loader" role="status" aria-live="assertive">
+      <div class="ring"><span></span></div>
+      <div class="bar"><i></i></div>
+      <p>Verificando acceso…</p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='login.js') }}"></script>
+</body>
+</html>
