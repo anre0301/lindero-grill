@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import os
+import json
 from datetime import datetime
 
-# ===== Dependencias Firebase Admin =====
+# ===== Firebase Admin =====
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -16,32 +17,57 @@ PIN_LEN = int(os.environ.get("POS_PIN_LEN", "4"))
 # Rutas protegidas
 PROTECTED_ENDPOINTS = {"panel", "seed"}
 
-# ===== Firebase Admin =====
+# ===== Inicialización Firebase (flexible para distintos hostings) =====
 def init_firebase():
     if firebase_admin._apps:
         return
+
+    # 1) Variable de entorno con el JSON completo (Railway, Deta, etc.)
+    env_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
+    if env_json:
+        try:
+            data = json.loads(env_json)
+            cred = credentials.Certificate(data)
+            firebase_admin.initialize_app(cred)
+            return
+        except Exception:
+            # si falla, sigue probando otras rutas
+            pass
+
+    # 2) Ruta a secret file (Render: /etc/secrets/serviceAccountKey.json)
+    env_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if env_path and os.path.exists(env_path):
+        cred = credentials.Certificate(env_path)
+        firebase_admin.initialize_app(cred)
+        return
+
+    # 3) Archivo local (desarrollo)
     fixed_path = os.path.join("keys", "serviceAccountKey.json")
     if os.path.exists(fixed_path):
         cred = credentials.Certificate(fixed_path)
-    else:
-        env_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-        if env_path and os.path.exists(env_path):
-            cred = credentials.Certificate(env_path)
-        else:
-            cred = credentials.ApplicationDefault()
+        firebase_admin.initialize_app(cred)
+        return
+
+    # 4) Último recurso: Application Default Credentials
+    cred = credentials.ApplicationDefault()
     firebase_admin.initialize_app(cred)
 
 init_firebase()
 db = firestore.client()
 
-# ===== Middleware =====
+# ===== Middleware auth simple por PIN =====
 @app.before_request
 def require_login():
-    open_endpoints = {"static", "index", "verify_pin"}
+    open_endpoints = {"static", "index", "verify_pin", "healthz"}
     if request.endpoint in open_endpoints or request.endpoint is None:
         return
     if request.endpoint in PROTECTED_ENDPOINTS and not session.get("user"):
         return redirect(url_for("index"))
+
+# ===== Healthcheck (para hosting) =====
+@app.route("/healthz")
+def healthz():
+    return "ok", 200
 
 # ===== Rutas =====
 @app.route("/")
@@ -64,11 +90,11 @@ def verify_pin():
 @app.route("/panel")
 def panel():
     return render_template("panel.html")
-    
+
 @app.route("/receta")
 def receta():
     return render_template("receta.html")
-    
+
 @app.route("/movimientos")
 def movimientos():
     return render_template("movimientos.html")
